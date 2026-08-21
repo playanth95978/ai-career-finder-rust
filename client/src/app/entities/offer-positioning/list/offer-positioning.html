@@ -1,0 +1,110 @@
+<div>
+  <h2 id="page-heading" data-cy="OfferPositioningHeading">
+    <span jhiTranslate="jobSearchRustApp.offerPositioning.home.title">OfferPositionings</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.offerPositioning.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-offer-positioning"
+        [routerLink]="['/offer-positioning/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.offerPositioning.home.createLabel">Créer un nouveau Offer Positioning</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (offerPositionings().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.offerPositioning.home.notFound">Aucun Offer Positioning trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerPositioning.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerPositioning.result">Result</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerPositioning.createdAt">Created At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerPositioning.jobOffer">Job Offer</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (offerPositioning of offerPositionings(); track trackId(offerPositioning)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/offer-positioning', offerPositioning.id, 'view']">{{ offerPositioning.id }}</a></td>
+          <td>{{ offerPositioning.userId }}</td>
+          <td>{{ offerPositioning.result }}</td>
+          <td>{{ offerPositioning.createdAt | formatMediumDatetime }}</td>
+          <td>
+            @if (offerPositioning.jobOffer) {
+            <div>
+              <a [routerLink]="['/job-offer', offerPositioning.jobOffer.id, 'view']">{{ offerPositioning.jobOffer.id }}</a>
+            </div>
+            }
+          </td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/offer-positioning', offerPositioning.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a
+                [routerLink]="['/offer-positioning', offerPositioning.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(offerPositioning)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

@@ -1,0 +1,84 @@
+<div>
+  <h2 id="page-heading" data-cy="RadarStateHeading">
+    <span jhiTranslate="jobSearchRustApp.radarState.home.title">RadarStates</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.radarState.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-radar-state"
+        [routerLink]="['/radar-state/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.radarState.home.createLabel">Créer un nouveau Radar State</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (radarStates().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.radarState.home.notFound">Aucun Radar State trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.radarState.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.radarState.lastOfferAt">Last Offer At</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (radarState of radarStates(); track trackId(radarState)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/radar-state', radarState.id, 'view']">{{ radarState.id }}</a></td>
+          <td>{{ radarState.userId }}</td>
+          <td>{{ radarState.lastOfferAt | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a [routerLink]="['/radar-state', radarState.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a [routerLink]="['/radar-state', radarState.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(radarState)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

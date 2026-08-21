@@ -1,0 +1,112 @@
+<div>
+  <h2 id="page-heading" data-cy="AutoApplyConfigHeading">
+    <span jhiTranslate="jobSearchRustApp.autoApplyConfig.home.title">AutoApplyConfigs</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.autoApplyConfig.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-auto-apply-config"
+        [routerLink]="['/auto-apply-config/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.autoApplyConfig.home.createLabel">Créer un nouveau Auto Apply Config</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (autoApplyConfigs().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.autoApplyConfig.home.notFound">Aucun Auto Apply Config trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.autoApplyConfig.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.autoApplyConfig.mode">Mode</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.autoApplyConfig.minScore">Min Score</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.autoApplyConfig.maxPerDay">Max Per Day</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.autoApplyConfig.sources">Sources</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (autoApplyConfig of autoApplyConfigs(); track trackId(autoApplyConfig)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/auto-apply-config', autoApplyConfig.id, 'view']">{{ autoApplyConfig.id }}</a></td>
+          <td>{{ autoApplyConfig.userId }}</td>
+          <td [jhiTranslate]="'jobSearchRustApp.AutoApplyMode.' + (autoApplyConfig.mode ?? 'null')">
+            {{ {"null":"","VALIDATION":"VALIDATION","AUTO":"AUTO"}[autoApplyConfig.mode ?? 'null'] }}
+          </td>
+          <td>{{ autoApplyConfig.minScore }}</td>
+          <td>{{ autoApplyConfig.maxPerDay }}</td>
+          <td>{{ autoApplyConfig.sources }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/auto-apply-config', autoApplyConfig.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a
+                [routerLink]="['/auto-apply-config', autoApplyConfig.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(autoApplyConfig)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

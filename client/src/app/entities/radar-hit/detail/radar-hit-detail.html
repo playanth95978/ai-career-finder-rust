@@ -1,0 +1,62 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (radarHit(); as radarHitRef) {
+    <div>
+      <h2 data-cy="radarHitDetailsHeading"><span jhiTranslate="jobSearchRustApp.radarHit.detail.title">Radar Hit</span></h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ radarHitRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.userId">User Id</span></dt>
+        <dd>
+          <span>{{ radarHitRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.score">Score</span></dt>
+        <dd>
+          <span>{{ radarHitRef.score }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.whyYou">Why You</span></dt>
+        <dd>
+          <span>{{ radarHitRef.whyYou }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.seen">Seen</span></dt>
+        <dd>
+          <span>{{ radarHitRef.seen }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.dismissed">Dismissed</span></dt>
+        <dd>
+          <span>{{ radarHitRef.dismissed }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ radarHitRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.radarHit.jobOffer">Job Offer</span></dt>
+        <dd>
+          @if (radarHit()!.jobOffer) {
+          <div>
+            <a [routerLink]="['/job-offer', radarHit()!.jobOffer?.id, 'view']">{{ radarHitRef.jobOffer?.id }}</a>
+          </div>
+          }
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/radar-hit', radarHitRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

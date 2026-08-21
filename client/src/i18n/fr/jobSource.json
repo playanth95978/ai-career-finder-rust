@@ -1,0 +1,25 @@
+{
+  "jobSearchRustApp": {
+    "JobSource": {
+      "null": "",
+      "GREENHOUSE": "GREENHOUSE",
+      "LEVER": "LEVER",
+      "SMARTRECRUITERS": "SMARTRECRUITERS",
+      "ASHBY": "ASHBY",
+      "WORKABLE": "WORKABLE",
+      "RECRUITEE": "RECRUITEE",
+      "REMOTEOK": "REMOTEOK",
+      "JOBICY": "JOBICY",
+      "ADZUNA": "ADZUNA",
+      "CAREERJET": "CAREERJET",
+      "WEWORKREMOTELY": "WEWORKREMOTELY",
+      "FRANCE_TRAVAIL": "FRANCE_TRAVAIL",
+      "EMPLOI_NC": "EMPLOI_NC",
+      "HELLOWORK": "HELLOWORK",
+      "SEEK": "SEEK",
+      "MANUAL": "MANUAL",
+      "LINKEDIN": "LINKEDIN",
+      "WELCOME_TO_THE_JUNGLE": "WELCOME_TO_THE_JUNGLE"
+    }
+  }
+}

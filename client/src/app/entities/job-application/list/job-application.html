@@ -1,0 +1,168 @@
+<div>
+  <h2 id="page-heading" data-cy="JobApplicationHeading">
+    <span jhiTranslate="jobSearchRustApp.jobApplication.home.title">JobApplications</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.jobApplication.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-job-application"
+        [routerLink]="['/job-application/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.jobApplication.home.createLabel">Créer un nouveau Job Application</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (jobApplications().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.jobApplication.home.notFound">Aucun Job Application trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.status">Status</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.coverLetter">Cover Letter</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.notes">Notes</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.matchScore">Match Score</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.createdAt">Created At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.updatedAt">Updated At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.appliedAt">Applied At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.jobOffer">Job Offer</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobApplication.candidateProfile">Candidate Profile</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (jobApplication of jobApplications(); track trackId(jobApplication)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/job-application', jobApplication.id, 'view']">{{ jobApplication.id }}</a></td>
+          <td>{{ jobApplication.userId }}</td>
+          <td [jhiTranslate]="'jobSearchRustApp.ApplicationStatus.' + (jobApplication.status ?? 'null')">
+            {{
+            {"null":"","DRAFT":"DRAFT","APPLIED":"APPLIED","INTERVIEW":"INTERVIEW","REJECTED":"REJECTED","GHOSTED":"GHOSTED","OFFER":"OFFER","WITHDRAWN":"WITHDRAWN"}[jobApplication.status
+            ?? 'null'] }}
+          </td>
+          <td>{{ jobApplication.coverLetter }}</td>
+          <td>{{ jobApplication.notes }}</td>
+          <td>{{ jobApplication.matchScore }}</td>
+          <td>{{ jobApplication.createdAt | formatMediumDatetime }}</td>
+          <td>{{ jobApplication.updatedAt | formatMediumDatetime }}</td>
+          <td>{{ jobApplication.appliedAt | formatMediumDatetime }}</td>
+          <td>
+            @if (jobApplication.jobOffer) {
+            <div>
+              <a [routerLink]="['/job-offer', jobApplication.jobOffer.id, 'view']">{{ jobApplication.jobOffer.id }}</a>
+            </div>
+            }
+          </td>
+          <td>
+            @if (jobApplication.candidateProfile) {
+            <div>
+              <a [routerLink]="['/candidate-profile', jobApplication.candidateProfile.id, 'view']"
+                >{{ jobApplication.candidateProfile.id }}</a
+              >
+            </div>
+            }
+          </td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a [routerLink]="['/job-application', jobApplication.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a [routerLink]="['/job-application', jobApplication.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(jobApplication)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @if (jobApplications().length > 0) {
+  <div>
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page(), totalItems: totalItems(), itemsPerPage: itemsPerPage() }" />
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems()"
+        [page]="page()"
+        [pageSize]="itemsPerPage()"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      />
+    </div>
+  </div>
+  }
+</div>

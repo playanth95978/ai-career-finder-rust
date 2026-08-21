@@ -1,0 +1,4 @@
+# Integration tests share a single PostgreSQL/MySQL database and are not
+# isolated from each other, so they must run sequentially.
+[env]
+RUST_TEST_THREADS = "1"

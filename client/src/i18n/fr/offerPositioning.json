@@ -1,0 +1,27 @@
+{
+  "jobSearchRustApp": {
+    "offerPositioning": {
+      "home": {
+        "title": "OfferPositionings",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Offer Positioning",
+        "createOrEditLabel": "Créer ou éditer un Offer Positioning",
+        "notFound": "Aucun Offer Positioning trouvé"
+      },
+      "created": "Un nouveau Offer Positioning a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Offer Positioning avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Offer Positioning avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Offer Positioning {{ id }} ?"
+      },
+      "detail": {
+        "title": "Offer Positioning"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "result": "Result",
+      "createdAt": "Created At",
+      "jobOffer": "Job Offer"
+    }
+  }
+}

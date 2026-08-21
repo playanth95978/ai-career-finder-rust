@@ -1,0 +1,33 @@
+{
+  "jobSearchRustApp": {
+    "jobApplication": {
+      "home": {
+        "title": "JobApplications",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Job Application",
+        "createOrEditLabel": "Créer ou éditer un Job Application",
+        "notFound": "Aucun Job Application trouvé"
+      },
+      "created": "Un nouveau Job Application a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Job Application avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Job Application avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Job Application {{ id }} ?"
+      },
+      "detail": {
+        "title": "Job Application"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "status": "Status",
+      "coverLetter": "Cover Letter",
+      "notes": "Notes",
+      "matchScore": "Match Score",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "appliedAt": "Applied At",
+      "jobOffer": "Job Offer",
+      "candidateProfile": "Candidate Profile"
+    }
+  }
+}

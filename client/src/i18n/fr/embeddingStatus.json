@@ -1,0 +1,12 @@
+{
+  "jobSearchRustApp": {
+    "EmbeddingStatus": {
+      "null": "",
+      "STUB": "STUB",
+      "PENDING": "PENDING",
+      "PROCESSING": "PROCESSING",
+      "COMPLETED": "COMPLETED",
+      "FAILED": "FAILED"
+    }
+  }
+}

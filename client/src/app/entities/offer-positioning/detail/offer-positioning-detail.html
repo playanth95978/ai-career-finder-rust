@@ -1,0 +1,52 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (offerPositioning(); as offerPositioningRef) {
+    <div>
+      <h2 data-cy="offerPositioningDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.offerPositioning.detail.title">Offer Positioning</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ offerPositioningRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerPositioning.userId">User Id</span></dt>
+        <dd>
+          <span>{{ offerPositioningRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerPositioning.result">Result</span></dt>
+        <dd>
+          <span>{{ offerPositioningRef.result }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerPositioning.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ offerPositioningRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerPositioning.jobOffer">Job Offer</span></dt>
+        <dd>
+          @if (offerPositioning()!.jobOffer) {
+          <div>
+            <a [routerLink]="['/job-offer', offerPositioning()!.jobOffer?.id, 'view']">{{ offerPositioningRef.jobOffer?.id }}</a>
+          </div>
+          }
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/offer-positioning', offerPositioningRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

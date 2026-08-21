@@ -1,0 +1,56 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (offerTailoredResume(); as offerTailoredResumeRef) {
+    <div>
+      <h2 data-cy="offerTailoredResumeDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.offerTailoredResume.detail.title">Offer Tailored Resume</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ offerTailoredResumeRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerTailoredResume.userId">User Id</span></dt>
+        <dd>
+          <span>{{ offerTailoredResumeRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerTailoredResume.data">Data</span></dt>
+        <dd>
+          <span>{{ offerTailoredResumeRef.data }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerTailoredResume.title">Title</span></dt>
+        <dd>
+          <span>{{ offerTailoredResumeRef.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerTailoredResume.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ offerTailoredResumeRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.offerTailoredResume.jobOffer">Job Offer</span></dt>
+        <dd>
+          @if (offerTailoredResume()!.jobOffer) {
+          <div>
+            <a [routerLink]="['/job-offer', offerTailoredResume()!.jobOffer?.id, 'view']">{{ offerTailoredResumeRef.jobOffer?.id }}</a>
+          </div>
+          }
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/offer-tailored-resume', offerTailoredResumeRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,30 @@
+{
+  "jobSearchRustApp": {
+    "cvResume": {
+      "home": {
+        "title": "CvResumes",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Cv Resume",
+        "createOrEditLabel": "Créer ou éditer un Cv Resume",
+        "notFound": "Aucun Cv Resume trouvé"
+      },
+      "created": "Un nouveau Cv Resume a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Cv Resume avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Cv Resume avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Cv Resume {{ id }} ?"
+      },
+      "detail": {
+        "title": "Cv Resume"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "title": "Title",
+      "template": "Template",
+      "data": "Data",
+      "versionNumber": "Version Number",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    }
+  }
+}

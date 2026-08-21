@@ -1,0 +1,30 @@
+{
+  "jobSearchRustApp": {
+    "radarHit": {
+      "home": {
+        "title": "RadarHits",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Radar Hit",
+        "createOrEditLabel": "Créer ou éditer un Radar Hit",
+        "notFound": "Aucun Radar Hit trouvé"
+      },
+      "created": "Un nouveau Radar Hit a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Radar Hit avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Radar Hit avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Radar Hit {{ id }} ?"
+      },
+      "detail": {
+        "title": "Radar Hit"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "score": "Score",
+      "whyYou": "Why You",
+      "seen": "Seen",
+      "dismissed": "Dismissed",
+      "createdAt": "Created At",
+      "jobOffer": "Job Offer"
+    }
+  }
+}

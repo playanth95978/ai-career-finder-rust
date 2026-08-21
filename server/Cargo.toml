@@ -1,0 +1,45 @@
+[package]
+name = "job_search_rust"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "job_search_rust"
+path = "src/main.rs"
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+diesel.workspace = true
+diesel_migrations.workspace = true
+dotenvy.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_qs.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+argon2.workspace = true
+rand.workspace = true
+jsonwebtoken.workspace = true
+validator.workspace = true
+async-trait.workspace = true
+lazy_static.workspace = true
+regex.workspace = true
+utoipa.workspace = true
+utoipa-scalar.workspace = true
+
+[dev-dependencies]
+axum-test = "14"
+tempfile = "3"
+# Phase 2a (2026-05-11): parametrized test cases for user_service sort
+# branches. Documented decision (plan doc, locked 2026-05-10): rstest over
+# 17 separate small `#[test]` functions sharing identical fixture setup —
+# 80% less source-line count for no readability loss.
+rstest = "0.21"

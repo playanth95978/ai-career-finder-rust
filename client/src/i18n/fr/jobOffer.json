@@ -1,0 +1,55 @@
+{
+  "jobSearchRustApp": {
+    "jobOffer": {
+      "home": {
+        "title": "JobOffers",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Job Offer",
+        "createOrEditLabel": "Créer ou éditer un Job Offer",
+        "notFound": "Aucun Job Offer trouvé"
+      },
+      "created": "Un nouveau Job Offer a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Job Offer avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Job Offer avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Job Offer {{ id }} ?"
+      },
+      "detail": {
+        "title": "Job Offer"
+      },
+      "id": "ID",
+      "title": "Title",
+      "company": "Company",
+      "location": "Location",
+      "country": "Country",
+      "remote": "Remote",
+      "description": "Description",
+      "searchText": "Search Text",
+      "skills": "Skills",
+      "metadata": "Metadata",
+      "rawPayload": "Raw Payload",
+      "contentHash": "Content Hash",
+      "embeddingStatus": "Embedding Status",
+      "embeddingModel": "Embedding Model",
+      "reindexVersion": "Reindex Version",
+      "retryCount": "Retry Count",
+      "indexingError": "Indexing Error",
+      "source": "Source",
+      "sourceId": "Source Id",
+      "applyUrl": "Apply Url",
+      "salaryMin": "Salary Min",
+      "salaryMax": "Salary Max",
+      "salaryCurrency": "Salary Currency",
+      "contractType": "Contract Type",
+      "experienceLevel": "Experience Level",
+      "category": "Category",
+      "sourceCategory": "Source Category",
+      "publishedAt": "Published At",
+      "createdAt": "Created At",
+      "indexedAt": "Indexed At",
+      "updatedAt": "Updated At",
+      "expiresAt": "Expires At",
+      "lastCheckedAt": "Last Checked At"
+    }
+  }
+}

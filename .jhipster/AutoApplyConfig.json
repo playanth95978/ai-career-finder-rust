@@ -1,0 +1,33 @@
+{
+  "annotations": {
+    "changelogDate": "20231211140806"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    },
+    {
+      "fieldName": "mode",
+      "fieldType": "AutoApplyMode",
+      "fieldValues": "VALIDATION,AUTO"
+    },
+    {
+      "fieldName": "minScore",
+      "fieldType": "Double"
+    },
+    {
+      "fieldName": "maxPerDay",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "sources",
+      "fieldType": "TextBlob"
+    }
+  ],
+  "name": "AutoApplyConfig",
+  "relationships": [],
+  "searchEngine": "no"
+}

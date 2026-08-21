@@ -1,0 +1,120 @@
+<div>
+  <h2 id="page-heading" data-cy="UserPreferenceHeading">
+    <span jhiTranslate="jobSearchRustApp.userPreference.home.title">UserPreferences</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.userPreference.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-user-preference"
+        [routerLink]="['/user-preference/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.userPreference.home.createLabel">Créer un nouveau User Preference</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (userPreferences().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.userPreference.home.notFound">Aucun User Preference trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.remoteOnly">Remote Only</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.contractType">Contract Type</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.salaryMin">Salary Min</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.salaryMax">Salary Max</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.preferredRoles">Preferred Roles</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.excludedTechnologies">Excluded Technologies</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.userPreference.preferredLocations">Preferred Locations</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (userPreference of userPreferences(); track trackId(userPreference)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/user-preference', userPreference.id, 'view']">{{ userPreference.id }}</a></td>
+          <td>{{ userPreference.userId }}</td>
+          <td>{{ userPreference.remoteOnly }}</td>
+          <td>{{ userPreference.contractType }}</td>
+          <td>{{ userPreference.salaryMin }}</td>
+          <td>{{ userPreference.salaryMax }}</td>
+          <td>{{ userPreference.preferredRoles }}</td>
+          <td>{{ userPreference.excludedTechnologies }}</td>
+          <td>{{ userPreference.preferredLocations }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a [routerLink]="['/user-preference', userPreference.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a [routerLink]="['/user-preference', userPreference.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(userPreference)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

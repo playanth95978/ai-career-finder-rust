@@ -1,0 +1,29 @@
+import { copyFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+import type { ApplicationBuilderOptions } from '@angular/build';
+
+import type { Target } from '@angular-devkit/architect';
+import type { Plugin } from 'esbuild';
+import { globSync } from 'tinyglobby';
+
+const swaggerUiDir = path.resolve(__dirname, '../src/swagger-ui');
+
+const copyFromPackage = (sourceDir: string, glob: string): void => {
+  for (const file of globSync(glob, { cwd: sourceDir })) {
+    copyFileSync(path.join(sourceDir, file), path.join(swaggerUiDir, path.basename(file)));
+  }
+};
+
+export default (builderOptions: ApplicationBuilderOptions, _target: Target): Plugin => {
+  mkdirSync(swaggerUiDir, { recursive: true });
+  copyFromPackage(path.join(path.dirname(require.resolve('axios/package.json')), 'dist'), 'axios.min.js');
+  copyFromPackage(require('swagger-ui-dist').getAbsoluteFSPath(), '{*.{png,css},swagger-ui-{bundle,standalone-preset}.js}');
+
+  builderOptions.define ??= {};
+  builderOptions.define.__VERSION__ = JSON.stringify(process.env.APP_VERSION ?? 'unknown');
+
+  return {
+    name: 'define:vars',
+    setup(_build) {},
+  };
+};

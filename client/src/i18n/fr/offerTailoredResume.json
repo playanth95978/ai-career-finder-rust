@@ -1,0 +1,28 @@
+{
+  "jobSearchRustApp": {
+    "offerTailoredResume": {
+      "home": {
+        "title": "OfferTailoredResumes",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Offer Tailored Resume",
+        "createOrEditLabel": "Créer ou éditer un Offer Tailored Resume",
+        "notFound": "Aucun Offer Tailored Resume trouvé"
+      },
+      "created": "Un nouveau Offer Tailored Resume a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Offer Tailored Resume avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Offer Tailored Resume avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Offer Tailored Resume {{ id }} ?"
+      },
+      "detail": {
+        "title": "Offer Tailored Resume"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "data": "Data",
+      "title": "Title",
+      "createdAt": "Created At",
+      "jobOffer": "Job Offer"
+    }
+  }
+}

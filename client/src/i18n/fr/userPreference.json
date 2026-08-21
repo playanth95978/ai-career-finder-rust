@@ -1,0 +1,31 @@
+{
+  "jobSearchRustApp": {
+    "userPreference": {
+      "home": {
+        "title": "UserPreferences",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau User Preference",
+        "createOrEditLabel": "Créer ou éditer un User Preference",
+        "notFound": "Aucun User Preference trouvé"
+      },
+      "created": "Un nouveau User Preference a été créé avec l'identifiant {{ param }}",
+      "updated": "Le User Preference avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le User Preference avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le User Preference {{ id }} ?"
+      },
+      "detail": {
+        "title": "User Preference"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "remoteOnly": "Remote Only",
+      "contractType": "Contract Type",
+      "salaryMin": "Salary Min",
+      "salaryMax": "Salary Max",
+      "preferredRoles": "Preferred Roles",
+      "excludedTechnologies": "Excluded Technologies",
+      "preferredLocations": "Preferred Locations"
+    }
+  }
+}

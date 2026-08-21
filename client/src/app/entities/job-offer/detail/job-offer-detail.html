@@ -1,0 +1,166 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (jobOffer(); as jobOfferRef) {
+    <div>
+      <h2 data-cy="jobOfferDetailsHeading"><span jhiTranslate="jobSearchRustApp.jobOffer.detail.title">Job Offer</span></h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.title">Title</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.company">Company</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.company }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.location">Location</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.location }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.country">Country</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.country }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.remote">Remote</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.remote }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.description">Description</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.description }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.searchText">Search Text</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.searchText }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.skills">Skills</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.skills }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.metadata">Metadata</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.metadata }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.rawPayload">Raw Payload</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.rawPayload }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.contentHash">Content Hash</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.contentHash }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.embeddingStatus">Embedding Status</span></dt>
+        <dd>
+          <span [jhiTranslate]="'jobSearchRustApp.EmbeddingStatus.' + (jobOfferRef.embeddingStatus ?? 'null')"
+            >{{
+            {"null":"","STUB":"STUB","PENDING":"PENDING","PROCESSING":"PROCESSING","COMPLETED":"COMPLETED","FAILED":"FAILED"}[jobOfferRef.embeddingStatus
+            ?? 'null'] }}</span
+          >
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.embeddingModel">Embedding Model</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.embeddingModel }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.reindexVersion">Reindex Version</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.reindexVersion }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.retryCount">Retry Count</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.retryCount }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.indexingError">Indexing Error</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.indexingError }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.source">Source</span></dt>
+        <dd>
+          <span [jhiTranslate]="'jobSearchRustApp.JobSource.' + (jobOfferRef.source ?? 'null')"
+            >{{
+            {"null":"","GREENHOUSE":"GREENHOUSE","LEVER":"LEVER","SMARTRECRUITERS":"SMARTRECRUITERS","ASHBY":"ASHBY","WORKABLE":"WORKABLE","RECRUITEE":"RECRUITEE","REMOTEOK":"REMOTEOK","JOBICY":"JOBICY","ADZUNA":"ADZUNA","CAREERJET":"CAREERJET","WEWORKREMOTELY":"WEWORKREMOTELY","FRANCE_TRAVAIL":"FRANCE_TRAVAIL","EMPLOI_NC":"EMPLOI_NC","HELLOWORK":"HELLOWORK","SEEK":"SEEK","MANUAL":"MANUAL","LINKEDIN":"LINKEDIN","WELCOME_TO_THE_JUNGLE":"WELCOME_TO_THE_JUNGLE"}[jobOfferRef.source
+            ?? 'null'] }}</span
+          >
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.sourceId">Source Id</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.sourceId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.applyUrl">Apply Url</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.applyUrl }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.salaryMin">Salary Min</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.salaryMin }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.salaryMax">Salary Max</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.salaryMax }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.salaryCurrency">Salary Currency</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.salaryCurrency }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.contractType">Contract Type</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.contractType }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.experienceLevel">Experience Level</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.experienceLevel }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.category">Category</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.category }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.sourceCategory">Source Category</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.sourceCategory }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.publishedAt">Published At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.publishedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.indexedAt">Indexed At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.indexedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.updatedAt">Updated At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.updatedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.expiresAt">Expires At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.expiresAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobOffer.lastCheckedAt">Last Checked At</span></dt>
+        <dd>
+          <span>{{ jobOfferRef.lastCheckedAt | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/job-offer', jobOfferRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

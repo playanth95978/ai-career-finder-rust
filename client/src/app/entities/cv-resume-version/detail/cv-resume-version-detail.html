@@ -1,0 +1,60 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (cvResumeVersion(); as cvResumeVersionRef) {
+    <div>
+      <h2 data-cy="cvResumeVersionDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.cvResumeVersion.detail.title">Cv Resume Version</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.versionNumber">Version Number</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.versionNumber }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.title">Title</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.template">Template</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.template }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.data">Data</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.data }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ cvResumeVersionRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResumeVersion.resume">Resume</span></dt>
+        <dd>
+          @if (cvResumeVersion()!.resume) {
+          <div>
+            <a [routerLink]="['/cv-resume', cvResumeVersion()!.resume?.id, 'view']">{{ cvResumeVersionRef.resume?.id }}</a>
+          </div>
+          }
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/cv-resume-version', cvResumeVersionRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

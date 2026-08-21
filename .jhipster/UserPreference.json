@@ -1,0 +1,44 @@
+{
+  "annotations": {
+    "changelogDate": "20231211140706"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    },
+    {
+      "fieldName": "remoteOnly",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "contractType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "salaryMin",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "salaryMax",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "preferredRoles",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "excludedTechnologies",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "preferredLocations",
+      "fieldType": "TextBlob"
+    }
+  ],
+  "name": "UserPreference",
+  "relationships": [],
+  "searchEngine": "no"
+}

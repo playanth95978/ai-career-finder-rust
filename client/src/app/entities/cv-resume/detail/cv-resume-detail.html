@@ -1,0 +1,58 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (cvResume(); as cvResumeRef) {
+    <div>
+      <h2 data-cy="cvResumeDetailsHeading"><span jhiTranslate="jobSearchRustApp.cvResume.detail.title">Cv Resume</span></h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.userId">User Id</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.title">Title</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.template">Template</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.template }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.data">Data</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.data }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.versionNumber">Version Number</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.versionNumber }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.cvResume.updatedAt">Updated At</span></dt>
+        <dd>
+          <span>{{ cvResumeRef.updatedAt | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/cv-resume', cvResumeRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

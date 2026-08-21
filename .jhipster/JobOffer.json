@@ -1,0 +1,145 @@
+{
+  "annotations": {
+    "changelogDate": "20231211140406"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "title",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "company",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "location",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "country",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "remote",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "description",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "searchText",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "skills",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "metadata",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "rawPayload",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "contentHash",
+      "fieldType": "String",
+      "fieldValidateRules": ["maxlength"],
+      "fieldValidateRulesMaxlength": "64"
+    },
+    {
+      "fieldName": "embeddingStatus",
+      "fieldType": "EmbeddingStatus",
+      "fieldValues": "STUB,PENDING,PROCESSING,COMPLETED,FAILED"
+    },
+    {
+      "fieldName": "embeddingModel",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "reindexVersion",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "retryCount",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "indexingError",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "source",
+      "fieldType": "JobSource",
+      "fieldValues": "GREENHOUSE,LEVER,SMARTRECRUITERS,ASHBY,WORKABLE,RECRUITEE,REMOTEOK,JOBICY,ADZUNA,CAREERJET,WEWORKREMOTELY,FRANCE_TRAVAIL,EMPLOI_NC,HELLOWORK,SEEK,MANUAL,LINKEDIN,WELCOME_TO_THE_JUNGLE"
+    },
+    {
+      "fieldName": "sourceId",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "applyUrl",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "salaryMin",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "salaryMax",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "salaryCurrency",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "contractType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "experienceLevel",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "category",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "sourceCategory",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "publishedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "indexedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "expiresAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "lastCheckedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "JobOffer",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no"
+}

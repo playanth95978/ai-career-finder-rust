@@ -1,0 +1,28 @@
+@if (autoApplyConfig) {
+<form name="deleteForm" (ngSubmit)="confirmDelete(autoApplyConfig.id!)">
+  <div class="modal-header">
+    <h4 class="modal-title" data-cy="autoApplyConfigDeleteDialogHeading" jhiTranslate="entity.delete.title">Confirmation de suppression</h4>
+  </div>
+
+  <div class="modal-body">
+    <jhi-alert-error />
+    <p
+      id="jhi-delete-autoApplyConfig-heading"
+      jhiTranslate="jobSearchRustApp.autoApplyConfig.delete.question"
+      [translateValues]="{ id: autoApplyConfig.id }"
+    >
+      Êtes-vous certain de vouloir supprimer le Auto Apply Config {{ autoApplyConfig.id }} ?
+    </p>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="cancel()">
+      <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+    </button>
+
+    <button id="jhi-confirm-delete-autoApplyConfig" data-cy="entityConfirmDeleteButton" type="submit" class="btn btn-danger">
+      <fa-icon icon="times" />&nbsp;<span jhiTranslate="entity.action.delete">Supprimer</span>
+    </button>
+  </div>
+</form>
+}

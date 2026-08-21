@@ -1,0 +1,100 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (candidateProfile(); as candidateProfileRef) {
+    <div>
+      <h2 data-cy="candidateProfileDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.candidateProfile.detail.title">Candidate Profile</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.userId">User Id</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.fullName">Full Name</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.fullName }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.email">Email</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.email }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.location">Location</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.location }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.yearsOfExperience">Years Of Experience</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.yearsOfExperience }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.skills">Skills</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.skills }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.experiences">Experiences</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.experiences }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.preferredRoles">Preferred Roles</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.preferredRoles }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.languages">Languages</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.languages }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.education">Education</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.education }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.certifications">Certifications</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.certifications }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.rawMarkdown">Raw Markdown</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.rawMarkdown }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.cvFilename">Cv Filename</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.cvFilename }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.embeddingModel">Embedding Model</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.embeddingModel }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.embeddedAt">Embedded At</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.embeddedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.candidateProfile.updatedAt">Updated At</span></dt>
+        <dd>
+          <span>{{ candidateProfileRef.updatedAt | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/candidate-profile', candidateProfileRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

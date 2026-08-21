@@ -1,0 +1,59 @@
+{
+  "annotations": {
+    "changelogDate": "20231211140606"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "status",
+      "fieldType": "ApplicationStatus",
+      "fieldValues": "DRAFT,APPLIED,INTERVIEW,REJECTED,GHOSTED,OFFER,WITHDRAWN"
+    },
+    {
+      "fieldName": "coverLetter",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "notes",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "matchScore",
+      "fieldType": "Double"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "appliedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "JobApplication",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityName": "jobOffer",
+      "relationshipName": "jobOffer",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    },
+    {
+      "otherEntityName": "candidateProfile",
+      "relationshipName": "candidateProfile",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no"
+}

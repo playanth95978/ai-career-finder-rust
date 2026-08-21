@@ -1,0 +1,193 @@
+/**
+ * Job Search AI — JDL adapté au blueprint generator-jhipster-rust (Axum + Diesel).
+ *
+ * Écarts assumés vs le projet Java d'origine :
+ *  - pas de `dto with mapstruct` / `service with serviceClass` / `filter` : spécifiques Java/Spring.
+ *  - `version` renommé `versionNumber` : `version` est un mot réservé JHipster (verrou optimiste).
+ *  - les colonnes jsonb deviennent TextBlob ; pgvector (`vector(768)`) et l'index BM25 ParadeDB
+ *    ne sont pas exprimables en JDL → à ajouter en migration Diesel manuelle.
+ */
+
+application {
+  config {
+    baseName jobSearchRust
+    applicationType monolith
+    packageName nc.opt.jobsearch
+    authenticationType jwt
+    databaseType sql
+    prodDatabaseType postgresql
+    devDatabaseType postgresql
+    clientFramework angular
+    nativeLanguage fr
+    languages [fr, en]
+    testFrameworks []
+  }
+  entities *
+}
+
+/* ===================== Enums ===================== */
+enum JobSource {
+  GREENHOUSE, LEVER, SMARTRECRUITERS, ASHBY, WORKABLE, RECRUITEE,
+  REMOTEOK, JOBICY, ADZUNA, CAREERJET, WEWORKREMOTELY,
+  FRANCE_TRAVAIL, EMPLOI_NC, HELLOWORK, SEEK,
+  MANUAL, LINKEDIN, WELCOME_TO_THE_JUNGLE
+}
+enum EmbeddingStatus { STUB, PENDING, PROCESSING, COMPLETED, FAILED }
+enum ApplicationStatus { DRAFT, APPLIED, INTERVIEW, REJECTED, GHOSTED, OFFER, WITHDRAWN }
+enum AutoApplyMode { VALIDATION, AUTO }
+enum TypeChat { CODE, JIRA, CONFLUENCE, PDF }
+
+/* ===================== Entities ===================== */
+
+entity JobOffer {
+  title String required
+  company String
+  location String
+  country String
+  remote Boolean
+  description TextBlob
+  searchText TextBlob
+  skills TextBlob
+  metadata TextBlob
+  rawPayload TextBlob
+  contentHash String maxlength(64)
+  embeddingStatus EmbeddingStatus
+  embeddingModel String
+  reindexVersion Integer
+  retryCount Integer
+  indexingError String
+  source JobSource
+  sourceId String
+  applyUrl String
+  salaryMin Integer
+  salaryMax Integer
+  salaryCurrency String
+  contractType String
+  experienceLevel String
+  category String
+  sourceCategory String
+  publishedAt Instant
+  createdAt Instant
+  indexedAt Instant
+  updatedAt Instant
+  expiresAt Instant
+  lastCheckedAt Instant
+}
+
+entity CandidateProfile {
+  userId String required
+  fullName String
+  email String
+  location String
+  yearsOfExperience Integer
+  skills TextBlob
+  experiences TextBlob
+  preferredRoles TextBlob
+  languages TextBlob
+  education TextBlob
+  certifications TextBlob
+  rawMarkdown TextBlob
+  cvFilename String
+  embeddingModel String
+  embeddedAt Instant
+  createdAt Instant
+  updatedAt Instant
+}
+
+entity JobApplication {
+  userId String required
+  status ApplicationStatus
+  coverLetter TextBlob
+  notes TextBlob
+  matchScore Double
+  createdAt Instant
+  updatedAt Instant
+  appliedAt Instant
+}
+
+entity UserPreference {
+  userId String required unique
+  remoteOnly Boolean
+  contractType String
+  salaryMin Integer
+  salaryMax Integer
+  preferredRoles TextBlob
+  excludedTechnologies TextBlob
+  preferredLocations TextBlob
+}
+
+entity AutoApplyConfig {
+  userId String required unique
+  mode AutoApplyMode
+  minScore Double
+  maxPerDay Integer
+  sources TextBlob
+}
+
+entity RadarHit {
+  userId String required
+  score Double
+  whyYou TextBlob
+  seen Boolean
+  dismissed Boolean
+  createdAt Instant
+}
+
+entity RadarState {
+  userId String required unique
+  lastOfferAt Instant
+}
+
+entity Conversation {
+  userId String required
+  title String
+  summary TextBlob
+  metadata TextBlob
+  typeChat TypeChat
+  createdAt Instant required
+  lastMessageAt Instant
+}
+
+entity CvResume {
+  userId String required unique
+  title String
+  template String
+  data TextBlob required
+  versionNumber Integer required
+  createdAt Instant
+  updatedAt Instant
+}
+
+entity CvResumeVersion {
+  versionNumber Integer required
+  title String
+  template String
+  data TextBlob required
+  createdAt Instant
+}
+
+entity OfferPositioning {
+  userId String required
+  result TextBlob required
+  createdAt Instant
+}
+
+entity OfferTailoredResume {
+  userId String required
+  data TextBlob required
+  title String
+  createdAt Instant
+}
+
+/* ===================== Relationships ===================== */
+relationship ManyToOne {
+  JobApplication{jobOffer} to JobOffer
+  JobApplication{candidateProfile} to CandidateProfile
+  RadarHit{jobOffer} to JobOffer
+  OfferPositioning{jobOffer} to JobOffer
+  OfferTailoredResume{jobOffer} to JobOffer
+  CvResumeVersion{resume} to CvResume
+}
+
+/* ===================== Options ===================== */
+paginate JobOffer, JobApplication, RadarHit, Conversation with pagination

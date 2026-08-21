@@ -1,0 +1,123 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-conversation-heading"
+        data-cy="ConversationCreateUpdateHeading"
+        jhiTranslate="jobSearchRustApp.conversation.home.createOrEditLabel"
+      >
+        Créer ou éditer un Conversation
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let userIdRef = editForm.get('userId')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_userId" jhiTranslate="jobSearchRustApp.conversation.userId">User Id</label>
+          <input type="text" class="form-control" name="userId" id="field_userId" data-cy="userId" formControlName="userId" />
+          @if (userIdRef.invalid && (userIdRef.dirty || userIdRef.touched)) {
+          <div>
+            @if (userIdRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_title" jhiTranslate="jobSearchRustApp.conversation.title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_summary" jhiTranslate="jobSearchRustApp.conversation.summary">Summary</label>
+          <textarea class="form-control" name="summary" id="field_summary" data-cy="summary" formControlName="summary"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_metadata" jhiTranslate="jobSearchRustApp.conversation.metadata">Metadata</label>
+          <textarea class="form-control" name="metadata" id="field_metadata" data-cy="metadata" formControlName="metadata"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_typeChat" jhiTranslate="jobSearchRustApp.conversation.typeChat">Type Chat</label>
+          <select class="form-control" name="typeChat" formControlName="typeChat" id="field_typeChat" data-cy="typeChat">
+            <option [ngValue]="null">{{ 'jobSearchRustApp.TypeChat.null' | translate }}</option>
+            @for (typeChat of typeChatValues; track $index) {
+            <option [value]="typeChat">{{ 'jobSearchRustApp.TypeChat.' + typeChat | translate }}</option>
+            }
+          </select>
+        </div>
+
+        @let createdAtRef = editForm.get('createdAt')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="jobSearchRustApp.conversation.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+          @if (createdAtRef.invalid && (createdAtRef.dirty || createdAtRef.touched)) {
+          <div>
+            @if (createdAtRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+            <small
+              class="form-text text-danger"
+              [hidden]="!createdAtRef.errors?.datetimelocal"
+              jhiTranslate="entity.validation.datetimelocal"
+              >Ce champ doit être une date et une heure.</small
+            >
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_lastMessageAt" jhiTranslate="jobSearchRustApp.conversation.lastMessageAt"
+            >Last Message At</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_lastMessageAt"
+              data-cy="lastMessageAt"
+              type="datetime-local"
+              class="form-control"
+              name="lastMessageAt"
+              formControlName="lastMessageAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,32 @@
+{
+  "annotations": {
+    "changelogDate": "20231211141406"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "result",
+      "fieldType": "TextBlob",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "OfferPositioning",
+  "relationships": [
+    {
+      "otherEntityName": "jobOffer",
+      "relationshipName": "jobOffer",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no"
+}

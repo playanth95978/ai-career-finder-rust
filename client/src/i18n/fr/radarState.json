@@ -1,0 +1,25 @@
+{
+  "jobSearchRustApp": {
+    "radarState": {
+      "home": {
+        "title": "RadarStates",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Radar State",
+        "createOrEditLabel": "Créer ou éditer un Radar State",
+        "notFound": "Aucun Radar State trouvé"
+      },
+      "created": "Un nouveau Radar State a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Radar State avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Radar State avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Radar State {{ id }} ?"
+      },
+      "detail": {
+        "title": "Radar State"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "lastOfferAt": "Last Offer At"
+    }
+  }
+}

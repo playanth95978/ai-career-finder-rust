@@ -1,0 +1,27 @@
+# For documentation on how to configure this file,
+# see https://diesel.rs/guides/configuring-diesel-cli
+
+# [print_schema] is intentionally omitted (Track 1-a.3 fix, 2026-06-07).
+#
+# When configured, `diesel migration run` regenerates server/src/db/schema.rs
+# from live database introspection. The regenerated file is pure schema —
+# it strips the `// jhipster-needle-add-entity-schema` and
+# `// jhipster-needle-add-allow-table` markers that the blueprint's
+# addEntityToRustSchema needle-injection relies on. That breaks every
+# incremental entity import (`jhipster jdl <fixture>`):
+#
+#   Error editing file server/src/db/schema.rs:
+#   Missing required jhipster-needle jhipster-needle-add-entity-schema
+#
+# By omitting [print_schema], `diesel migration run` only applies migrations
+# to the live database; the blueprint owns schema.rs end-to-end via:
+#   1. schema.rs.ejs template emits the baseline (with needles)
+#   2. source.addEntityToRustSchema injects per-entity `diesel::table!`
+#      blocks at the needle marker on each entity import
+#
+# Developers running `diesel migration run` locally still apply schema
+# changes to their DB; they just shouldn't rely on diesel to regenerate
+# schema.rs (it's blueprint-managed, like models/services/handlers).
+
+[migrations_directory]
+dir = "migrations"

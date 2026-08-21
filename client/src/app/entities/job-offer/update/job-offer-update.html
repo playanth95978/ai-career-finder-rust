@@ -1,0 +1,382 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2 id="jhi-job-offer-heading" data-cy="JobOfferCreateUpdateHeading" jhiTranslate="jobSearchRustApp.jobOffer.home.createOrEditLabel">
+        Créer ou éditer un Job Offer
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let titleRef = editForm.get('title')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_title" jhiTranslate="jobSearchRustApp.jobOffer.title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+          @if (titleRef.invalid && (titleRef.dirty || titleRef.touched)) {
+          <div>
+            @if (titleRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_company" jhiTranslate="jobSearchRustApp.jobOffer.company">Company</label>
+          <input type="text" class="form-control" name="company" id="field_company" data-cy="company" formControlName="company" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_location" jhiTranslate="jobSearchRustApp.jobOffer.location">Location</label>
+          <input type="text" class="form-control" name="location" id="field_location" data-cy="location" formControlName="location" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_country" jhiTranslate="jobSearchRustApp.jobOffer.country">Country</label>
+          <input type="text" class="form-control" name="country" id="field_country" data-cy="country" formControlName="country" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_remote" jhiTranslate="jobSearchRustApp.jobOffer.remote">Remote</label>
+          <input type="checkbox" class="form-check" name="remote" id="field_remote" data-cy="remote" formControlName="remote" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_description" jhiTranslate="jobSearchRustApp.jobOffer.description">Description</label>
+          <textarea
+            class="form-control"
+            name="description"
+            id="field_description"
+            data-cy="description"
+            formControlName="description"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_searchText" jhiTranslate="jobSearchRustApp.jobOffer.searchText">Search Text</label>
+          <textarea
+            class="form-control"
+            name="searchText"
+            id="field_searchText"
+            data-cy="searchText"
+            formControlName="searchText"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_skills" jhiTranslate="jobSearchRustApp.jobOffer.skills">Skills</label>
+          <textarea class="form-control" name="skills" id="field_skills" data-cy="skills" formControlName="skills"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_metadata" jhiTranslate="jobSearchRustApp.jobOffer.metadata">Metadata</label>
+          <textarea class="form-control" name="metadata" id="field_metadata" data-cy="metadata" formControlName="metadata"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_rawPayload" jhiTranslate="jobSearchRustApp.jobOffer.rawPayload">Raw Payload</label>
+          <textarea
+            class="form-control"
+            name="rawPayload"
+            id="field_rawPayload"
+            data-cy="rawPayload"
+            formControlName="rawPayload"
+          ></textarea>
+        </div>
+
+        @let contentHashRef = editForm.get('contentHash')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_contentHash" jhiTranslate="jobSearchRustApp.jobOffer.contentHash">Content Hash</label>
+          <input
+            type="text"
+            class="form-control"
+            name="contentHash"
+            id="field_contentHash"
+            data-cy="contentHash"
+            formControlName="contentHash"
+          />
+          @if (contentHashRef.invalid && (contentHashRef.dirty || contentHashRef.touched)) {
+          <div>
+            @if (contentHashRef.errors?.maxlength) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.maxlength" [translateValues]="{ max: '64' }"
+              >Ce champ doit faire au maximum 64 caractères.</small
+            >
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_embeddingStatus" jhiTranslate="jobSearchRustApp.jobOffer.embeddingStatus"
+            >Embedding Status</label
+          >
+          <select
+            class="form-control"
+            name="embeddingStatus"
+            formControlName="embeddingStatus"
+            id="field_embeddingStatus"
+            data-cy="embeddingStatus"
+          >
+            <option [ngValue]="null">{{ 'jobSearchRustApp.EmbeddingStatus.null' | translate }}</option>
+            @for (embeddingStatus of embeddingStatusValues; track $index) {
+            <option [value]="embeddingStatus">{{ 'jobSearchRustApp.EmbeddingStatus.' + embeddingStatus | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_embeddingModel" jhiTranslate="jobSearchRustApp.jobOffer.embeddingModel"
+            >Embedding Model</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="embeddingModel"
+            id="field_embeddingModel"
+            data-cy="embeddingModel"
+            formControlName="embeddingModel"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_reindexVersion" jhiTranslate="jobSearchRustApp.jobOffer.reindexVersion"
+            >Reindex Version</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="reindexVersion"
+            id="field_reindexVersion"
+            data-cy="reindexVersion"
+            formControlName="reindexVersion"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_retryCount" jhiTranslate="jobSearchRustApp.jobOffer.retryCount">Retry Count</label>
+          <input
+            type="number"
+            class="form-control"
+            name="retryCount"
+            id="field_retryCount"
+            data-cy="retryCount"
+            formControlName="retryCount"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_indexingError" jhiTranslate="jobSearchRustApp.jobOffer.indexingError">Indexing Error</label>
+          <input
+            type="text"
+            class="form-control"
+            name="indexingError"
+            id="field_indexingError"
+            data-cy="indexingError"
+            formControlName="indexingError"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_source" jhiTranslate="jobSearchRustApp.jobOffer.source">Source</label>
+          <select class="form-control" name="source" formControlName="source" id="field_source" data-cy="source">
+            <option [ngValue]="null">{{ 'jobSearchRustApp.JobSource.null' | translate }}</option>
+            @for (jobSource of jobSourceValues; track $index) {
+            <option [value]="jobSource">{{ 'jobSearchRustApp.JobSource.' + jobSource | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_sourceId" jhiTranslate="jobSearchRustApp.jobOffer.sourceId">Source Id</label>
+          <input type="text" class="form-control" name="sourceId" id="field_sourceId" data-cy="sourceId" formControlName="sourceId" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_applyUrl" jhiTranslate="jobSearchRustApp.jobOffer.applyUrl">Apply Url</label>
+          <input type="text" class="form-control" name="applyUrl" id="field_applyUrl" data-cy="applyUrl" formControlName="applyUrl" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_salaryMin" jhiTranslate="jobSearchRustApp.jobOffer.salaryMin">Salary Min</label>
+          <input type="number" class="form-control" name="salaryMin" id="field_salaryMin" data-cy="salaryMin" formControlName="salaryMin" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_salaryMax" jhiTranslate="jobSearchRustApp.jobOffer.salaryMax">Salary Max</label>
+          <input type="number" class="form-control" name="salaryMax" id="field_salaryMax" data-cy="salaryMax" formControlName="salaryMax" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_salaryCurrency" jhiTranslate="jobSearchRustApp.jobOffer.salaryCurrency"
+            >Salary Currency</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="salaryCurrency"
+            id="field_salaryCurrency"
+            data-cy="salaryCurrency"
+            formControlName="salaryCurrency"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_contractType" jhiTranslate="jobSearchRustApp.jobOffer.contractType">Contract Type</label>
+          <input
+            type="text"
+            class="form-control"
+            name="contractType"
+            id="field_contractType"
+            data-cy="contractType"
+            formControlName="contractType"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_experienceLevel" jhiTranslate="jobSearchRustApp.jobOffer.experienceLevel"
+            >Experience Level</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="experienceLevel"
+            id="field_experienceLevel"
+            data-cy="experienceLevel"
+            formControlName="experienceLevel"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_category" jhiTranslate="jobSearchRustApp.jobOffer.category">Category</label>
+          <input type="text" class="form-control" name="category" id="field_category" data-cy="category" formControlName="category" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_sourceCategory" jhiTranslate="jobSearchRustApp.jobOffer.sourceCategory"
+            >Source Category</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="sourceCategory"
+            id="field_sourceCategory"
+            data-cy="sourceCategory"
+            formControlName="sourceCategory"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_publishedAt" jhiTranslate="jobSearchRustApp.jobOffer.publishedAt">Published At</label>
+          <div class="d-flex">
+            <input
+              id="field_publishedAt"
+              data-cy="publishedAt"
+              type="datetime-local"
+              class="form-control"
+              name="publishedAt"
+              formControlName="publishedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="jobSearchRustApp.jobOffer.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_indexedAt" jhiTranslate="jobSearchRustApp.jobOffer.indexedAt">Indexed At</label>
+          <div class="d-flex">
+            <input
+              id="field_indexedAt"
+              data-cy="indexedAt"
+              type="datetime-local"
+              class="form-control"
+              name="indexedAt"
+              formControlName="indexedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_updatedAt" jhiTranslate="jobSearchRustApp.jobOffer.updatedAt">Updated At</label>
+          <div class="d-flex">
+            <input
+              id="field_updatedAt"
+              data-cy="updatedAt"
+              type="datetime-local"
+              class="form-control"
+              name="updatedAt"
+              formControlName="updatedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_expiresAt" jhiTranslate="jobSearchRustApp.jobOffer.expiresAt">Expires At</label>
+          <div class="d-flex">
+            <input
+              id="field_expiresAt"
+              data-cy="expiresAt"
+              type="datetime-local"
+              class="form-control"
+              name="expiresAt"
+              formControlName="expiresAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_lastCheckedAt" jhiTranslate="jobSearchRustApp.jobOffer.lastCheckedAt">Last Checked At</label>
+          <div class="d-flex">
+            <input
+              id="field_lastCheckedAt"
+              data-cy="lastCheckedAt"
+              type="datetime-local"
+              class="form-control"
+              name="lastCheckedAt"
+              formControlName="lastCheckedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

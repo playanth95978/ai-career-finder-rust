@@ -1,0 +1,127 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-user-preference-heading"
+        data-cy="UserPreferenceCreateUpdateHeading"
+        jhiTranslate="jobSearchRustApp.userPreference.home.createOrEditLabel"
+      >
+        Créer ou éditer un User Preference
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let userIdRef = editForm.get('userId')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_userId" jhiTranslate="jobSearchRustApp.userPreference.userId">User Id</label>
+          <input type="text" class="form-control" name="userId" id="field_userId" data-cy="userId" formControlName="userId" />
+          @if (userIdRef.invalid && (userIdRef.dirty || userIdRef.touched)) {
+          <div>
+            @if (userIdRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_remoteOnly" jhiTranslate="jobSearchRustApp.userPreference.remoteOnly">Remote Only</label>
+          <input
+            type="checkbox"
+            class="form-check"
+            name="remoteOnly"
+            id="field_remoteOnly"
+            data-cy="remoteOnly"
+            formControlName="remoteOnly"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_contractType" jhiTranslate="jobSearchRustApp.userPreference.contractType"
+            >Contract Type</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="contractType"
+            id="field_contractType"
+            data-cy="contractType"
+            formControlName="contractType"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_salaryMin" jhiTranslate="jobSearchRustApp.userPreference.salaryMin">Salary Min</label>
+          <input type="number" class="form-control" name="salaryMin" id="field_salaryMin" data-cy="salaryMin" formControlName="salaryMin" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_salaryMax" jhiTranslate="jobSearchRustApp.userPreference.salaryMax">Salary Max</label>
+          <input type="number" class="form-control" name="salaryMax" id="field_salaryMax" data-cy="salaryMax" formControlName="salaryMax" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_preferredRoles" jhiTranslate="jobSearchRustApp.userPreference.preferredRoles"
+            >Preferred Roles</label
+          >
+          <textarea
+            class="form-control"
+            name="preferredRoles"
+            id="field_preferredRoles"
+            data-cy="preferredRoles"
+            formControlName="preferredRoles"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_excludedTechnologies" jhiTranslate="jobSearchRustApp.userPreference.excludedTechnologies"
+            >Excluded Technologies</label
+          >
+          <textarea
+            class="form-control"
+            name="excludedTechnologies"
+            id="field_excludedTechnologies"
+            data-cy="excludedTechnologies"
+            formControlName="excludedTechnologies"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_preferredLocations" jhiTranslate="jobSearchRustApp.userPreference.preferredLocations"
+            >Preferred Locations</label
+          >
+          <textarea
+            class="form-control"
+            name="preferredLocations"
+            id="field_preferredLocations"
+            data-cy="preferredLocations"
+            formControlName="preferredLocations"
+          ></textarea>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

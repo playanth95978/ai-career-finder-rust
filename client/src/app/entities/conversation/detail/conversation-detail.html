@@ -1,0 +1,60 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (conversation(); as conversationRef) {
+    <div>
+      <h2 data-cy="conversationDetailsHeading"><span jhiTranslate="jobSearchRustApp.conversation.detail.title">Conversation</span></h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ conversationRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.userId">User Id</span></dt>
+        <dd>
+          <span>{{ conversationRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.title">Title</span></dt>
+        <dd>
+          <span>{{ conversationRef.title }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.summary">Summary</span></dt>
+        <dd>
+          <span>{{ conversationRef.summary }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.metadata">Metadata</span></dt>
+        <dd>
+          <span>{{ conversationRef.metadata }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.typeChat">Type Chat</span></dt>
+        <dd>
+          <span [jhiTranslate]="'jobSearchRustApp.TypeChat.' + (conversationRef.typeChat ?? 'null')"
+            >{{ {"null":"","CODE":"CODE","JIRA":"JIRA","CONFLUENCE":"CONFLUENCE","PDF":"PDF"}[conversationRef.typeChat ?? 'null'] }}</span
+          >
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ conversationRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.conversation.lastMessageAt">Last Message At</span></dt>
+        <dd>
+          <span>{{ conversationRef.lastMessageAt | formatMediumDatetime }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/conversation', conversationRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

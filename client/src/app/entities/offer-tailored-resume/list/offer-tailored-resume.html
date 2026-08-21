@@ -1,0 +1,116 @@
+<div>
+  <h2 id="page-heading" data-cy="OfferTailoredResumeHeading">
+    <span jhiTranslate="jobSearchRustApp.offerTailoredResume.home.title">OfferTailoredResumes</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.offerTailoredResume.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-offer-tailored-resume"
+        [routerLink]="['/offer-tailored-resume/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.offerTailoredResume.home.createLabel">Créer un nouveau Offer Tailored Resume</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (offerTailoredResumes().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.offerTailoredResume.home.notFound">Aucun Offer Tailored Resume trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerTailoredResume.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerTailoredResume.data">Data</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerTailoredResume.title">Title</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerTailoredResume.createdAt">Created At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.offerTailoredResume.jobOffer">Job Offer</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (offerTailoredResume of offerTailoredResumes(); track trackId(offerTailoredResume)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/offer-tailored-resume', offerTailoredResume.id, 'view']">{{ offerTailoredResume.id }}</a></td>
+          <td>{{ offerTailoredResume.userId }}</td>
+          <td>{{ offerTailoredResume.data }}</td>
+          <td>{{ offerTailoredResume.title }}</td>
+          <td>{{ offerTailoredResume.createdAt | formatMediumDatetime }}</td>
+          <td>
+            @if (offerTailoredResume.jobOffer) {
+            <div>
+              <a [routerLink]="['/job-offer', offerTailoredResume.jobOffer.id, 'view']">{{ offerTailoredResume.jobOffer.id }}</a>
+            </div>
+            }
+          </td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/offer-tailored-resume', offerTailoredResume.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a
+                [routerLink]="['/offer-tailored-resume', offerTailoredResume.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(offerTailoredResume)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

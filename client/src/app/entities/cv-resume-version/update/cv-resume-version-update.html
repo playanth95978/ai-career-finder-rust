@@ -1,0 +1,119 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-cv-resume-version-heading"
+        data-cy="CvResumeVersionCreateUpdateHeading"
+        jhiTranslate="jobSearchRustApp.cvResumeVersion.home.createOrEditLabel"
+      >
+        Créer ou éditer un Cv Resume Version
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let versionNumberRef = editForm.get('versionNumber')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_versionNumber" jhiTranslate="jobSearchRustApp.cvResumeVersion.versionNumber"
+            >Version Number</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="versionNumber"
+            id="field_versionNumber"
+            data-cy="versionNumber"
+            formControlName="versionNumber"
+          />
+          @if (versionNumberRef.invalid && (versionNumberRef.dirty || versionNumberRef.touched)) {
+          <div>
+            @if (versionNumberRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+            <small class="form-text text-danger" [hidden]="!versionNumberRef.errors?.number" jhiTranslate="entity.validation.number"
+              >Ce champ doit être un nombre.</small
+            >
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_title" jhiTranslate="jobSearchRustApp.cvResumeVersion.title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_template" jhiTranslate="jobSearchRustApp.cvResumeVersion.template">Template</label>
+          <input type="text" class="form-control" name="template" id="field_template" data-cy="template" formControlName="template" />
+        </div>
+
+        @let dataRef = editForm.get('data')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_data" jhiTranslate="jobSearchRustApp.cvResumeVersion.data">Data</label>
+          <textarea class="form-control" name="data" id="field_data" data-cy="data" formControlName="data"></textarea>
+          @if (dataRef.invalid && (dataRef.dirty || dataRef.touched)) {
+          <div>
+            @if (dataRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="jobSearchRustApp.cvResumeVersion.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_resume" jhiTranslate="jobSearchRustApp.cvResumeVersion.resume">Resume</label>
+          <select
+            class="form-control"
+            id="field_resume"
+            data-cy="resume"
+            name="resume"
+            formControlName="resume"
+            [compareWith]="compareCvResume"
+          >
+            <option [ngValue]="null"></option>
+            @for (cvResumeOption of cvResumesSharedCollection(); track $index) {
+            <option [ngValue]="cvResumeOption">{{ cvResumeOption.id }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

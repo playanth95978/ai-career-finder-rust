@@ -1,0 +1,86 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (jobApplication(); as jobApplicationRef) {
+    <div>
+      <h2 data-cy="jobApplicationDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.jobApplication.detail.title">Job Application</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.userId">User Id</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.status">Status</span></dt>
+        <dd>
+          <span [jhiTranslate]="'jobSearchRustApp.ApplicationStatus.' + (jobApplicationRef.status ?? 'null')"
+            >{{
+            {"null":"","DRAFT":"DRAFT","APPLIED":"APPLIED","INTERVIEW":"INTERVIEW","REJECTED":"REJECTED","GHOSTED":"GHOSTED","OFFER":"OFFER","WITHDRAWN":"WITHDRAWN"}[jobApplicationRef.status
+            ?? 'null'] }}</span
+          >
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.coverLetter">Cover Letter</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.coverLetter }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.notes">Notes</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.notes }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.matchScore">Match Score</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.matchScore }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.createdAt">Created At</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.createdAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.updatedAt">Updated At</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.updatedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.appliedAt">Applied At</span></dt>
+        <dd>
+          <span>{{ jobApplicationRef.appliedAt | formatMediumDatetime }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.jobOffer">Job Offer</span></dt>
+        <dd>
+          @if (jobApplication()!.jobOffer) {
+          <div>
+            <a [routerLink]="['/job-offer', jobApplication()!.jobOffer?.id, 'view']">{{ jobApplicationRef.jobOffer?.id }}</a>
+          </div>
+          }
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.jobApplication.candidateProfile">Candidate Profile</span></dt>
+        <dd>
+          @if (jobApplication()!.candidateProfile) {
+          <div>
+            <a [routerLink]="['/candidate-profile', jobApplication()!.candidateProfile?.id, 'view']"
+              >{{ jobApplicationRef.candidateProfile?.id }}</a
+            >
+          </div>
+          }
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/job-application', jobApplicationRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,182 @@
+<div>
+  <h2 id="page-heading" data-cy="CandidateProfileHeading">
+    <span jhiTranslate="jobSearchRustApp.candidateProfile.home.title">CandidateProfiles</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.candidateProfile.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-candidate-profile"
+        [routerLink]="['/candidate-profile/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.candidateProfile.home.createLabel">Créer un nouveau Candidate Profile</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (candidateProfiles().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.candidateProfile.home.notFound">Aucun Candidate Profile trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.userId">User Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.fullName">Full Name</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.email">Email</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.location">Location</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.yearsOfExperience">Years Of Experience</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.skills">Skills</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.experiences">Experiences</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.preferredRoles">Preferred Roles</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.languages">Languages</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.education">Education</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.certifications">Certifications</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.rawMarkdown">Raw Markdown</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.cvFilename">Cv Filename</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.embeddingModel">Embedding Model</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.embeddedAt">Embedded At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.createdAt">Created At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.candidateProfile.updatedAt">Updated At</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (candidateProfile of candidateProfiles(); track trackId(candidateProfile)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/candidate-profile', candidateProfile.id, 'view']">{{ candidateProfile.id }}</a></td>
+          <td>{{ candidateProfile.userId }}</td>
+          <td>{{ candidateProfile.fullName }}</td>
+          <td>{{ candidateProfile.email }}</td>
+          <td>{{ candidateProfile.location }}</td>
+          <td>{{ candidateProfile.yearsOfExperience }}</td>
+          <td>{{ candidateProfile.skills }}</td>
+          <td>{{ candidateProfile.experiences }}</td>
+          <td>{{ candidateProfile.preferredRoles }}</td>
+          <td>{{ candidateProfile.languages }}</td>
+          <td>{{ candidateProfile.education }}</td>
+          <td>{{ candidateProfile.certifications }}</td>
+          <td>{{ candidateProfile.rawMarkdown }}</td>
+          <td>{{ candidateProfile.cvFilename }}</td>
+          <td>{{ candidateProfile.embeddingModel }}</td>
+          <td>{{ candidateProfile.embeddedAt | formatMediumDatetime }}</td>
+          <td>{{ candidateProfile.createdAt | formatMediumDatetime }}</td>
+          <td>{{ candidateProfile.updatedAt | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a
+                [routerLink]="['/candidate-profile', candidateProfile.id, 'view']"
+                class="btn btn-info btn-sm"
+                data-cy="entityDetailsButton"
+              >
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a
+                [routerLink]="['/candidate-profile', candidateProfile.id, 'edit']"
+                class="btn btn-primary btn-sm"
+                data-cy="entityEditButton"
+              >
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(candidateProfile)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+</div>

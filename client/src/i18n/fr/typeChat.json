@@ -1,0 +1,11 @@
+{
+  "jobSearchRustApp": {
+    "TypeChat": {
+      "null": "",
+      "CODE": "CODE",
+      "JIRA": "JIRA",
+      "CONFLUENCE": "CONFLUENCE",
+      "PDF": "PDF"
+    }
+  }
+}

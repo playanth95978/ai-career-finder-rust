@@ -1,0 +1,80 @@
+{
+  "annotations": {
+    "changelogDate": "20231211140506"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "fullName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "email",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "location",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "yearsOfExperience",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "skills",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "experiences",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "preferredRoles",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "languages",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "education",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "certifications",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "rawMarkdown",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "cvFilename",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "embeddingModel",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "embeddedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "CandidateProfile",
+  "relationships": [],
+  "searchEngine": "no"
+}

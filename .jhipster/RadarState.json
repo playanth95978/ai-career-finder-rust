@@ -1,0 +1,20 @@
+{
+  "annotations": {
+    "changelogDate": "20231211141006"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required", "unique"]
+    },
+    {
+      "fieldName": "lastOfferAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "RadarState",
+  "relationships": [],
+  "searchEngine": "no"
+}

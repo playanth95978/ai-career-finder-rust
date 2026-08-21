@@ -1,0 +1,28 @@
+{
+  "jobSearchRustApp": {
+    "autoApplyConfig": {
+      "home": {
+        "title": "AutoApplyConfigs",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Auto Apply Config",
+        "createOrEditLabel": "Créer ou éditer un Auto Apply Config",
+        "notFound": "Aucun Auto Apply Config trouvé"
+      },
+      "created": "Un nouveau Auto Apply Config a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Auto Apply Config avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Auto Apply Config avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Auto Apply Config {{ id }} ?"
+      },
+      "detail": {
+        "title": "Auto Apply Config"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "mode": "Mode",
+      "minScore": "Min Score",
+      "maxPerDay": "Max Per Day",
+      "sources": "Sources"
+    }
+  }
+}

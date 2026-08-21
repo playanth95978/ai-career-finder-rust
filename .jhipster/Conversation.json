@@ -1,0 +1,43 @@
+{
+  "annotations": {
+    "changelogDate": "20231211141106"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "userId",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "title",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "summary",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "metadata",
+      "fieldType": "TextBlob"
+    },
+    {
+      "fieldName": "typeChat",
+      "fieldType": "TypeChat",
+      "fieldValues": "CODE,JIRA,CONFLUENCE,PDF"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "lastMessageAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "Conversation",
+  "pagination": "pagination",
+  "relationships": [],
+  "searchEngine": "no"
+}

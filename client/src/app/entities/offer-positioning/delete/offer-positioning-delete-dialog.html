@@ -1,0 +1,30 @@
+@if (offerPositioning) {
+<form name="deleteForm" (ngSubmit)="confirmDelete(offerPositioning.id!)">
+  <div class="modal-header">
+    <h4 class="modal-title" data-cy="offerPositioningDeleteDialogHeading" jhiTranslate="entity.delete.title">
+      Confirmation de suppression
+    </h4>
+  </div>
+
+  <div class="modal-body">
+    <jhi-alert-error />
+    <p
+      id="jhi-delete-offerPositioning-heading"
+      jhiTranslate="jobSearchRustApp.offerPositioning.delete.question"
+      [translateValues]="{ id: offerPositioning.id }"
+    >
+      Êtes-vous certain de vouloir supprimer le Offer Positioning {{ offerPositioning.id }} ?
+    </p>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-dismiss="modal" (click)="cancel()">
+      <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+    </button>
+
+    <button id="jhi-confirm-delete-offerPositioning" data-cy="entityConfirmDeleteButton" type="submit" class="btn btn-danger">
+      <fa-icon icon="times" />&nbsp;<span jhiTranslate="entity.action.delete">Supprimer</span>
+    </button>
+  </div>
+</form>
+}

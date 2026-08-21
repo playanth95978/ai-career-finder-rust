@@ -1,0 +1,217 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-candidate-profile-heading"
+        data-cy="CandidateProfileCreateUpdateHeading"
+        jhiTranslate="jobSearchRustApp.candidateProfile.home.createOrEditLabel"
+      >
+        Créer ou éditer un Candidate Profile
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let userIdRef = editForm.get('userId')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_userId" jhiTranslate="jobSearchRustApp.candidateProfile.userId">User Id</label>
+          <input type="text" class="form-control" name="userId" id="field_userId" data-cy="userId" formControlName="userId" />
+          @if (userIdRef.invalid && (userIdRef.dirty || userIdRef.touched)) {
+          <div>
+            @if (userIdRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_fullName" jhiTranslate="jobSearchRustApp.candidateProfile.fullName">Full Name</label>
+          <input type="text" class="form-control" name="fullName" id="field_fullName" data-cy="fullName" formControlName="fullName" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_email" jhiTranslate="jobSearchRustApp.candidateProfile.email">Email</label>
+          <input type="text" class="form-control" name="email" id="field_email" data-cy="email" formControlName="email" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_location" jhiTranslate="jobSearchRustApp.candidateProfile.location">Location</label>
+          <input type="text" class="form-control" name="location" id="field_location" data-cy="location" formControlName="location" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_yearsOfExperience" jhiTranslate="jobSearchRustApp.candidateProfile.yearsOfExperience"
+            >Years Of Experience</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="yearsOfExperience"
+            id="field_yearsOfExperience"
+            data-cy="yearsOfExperience"
+            formControlName="yearsOfExperience"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_skills" jhiTranslate="jobSearchRustApp.candidateProfile.skills">Skills</label>
+          <textarea class="form-control" name="skills" id="field_skills" data-cy="skills" formControlName="skills"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_experiences" jhiTranslate="jobSearchRustApp.candidateProfile.experiences">Experiences</label>
+          <textarea
+            class="form-control"
+            name="experiences"
+            id="field_experiences"
+            data-cy="experiences"
+            formControlName="experiences"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_preferredRoles" jhiTranslate="jobSearchRustApp.candidateProfile.preferredRoles"
+            >Preferred Roles</label
+          >
+          <textarea
+            class="form-control"
+            name="preferredRoles"
+            id="field_preferredRoles"
+            data-cy="preferredRoles"
+            formControlName="preferredRoles"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_languages" jhiTranslate="jobSearchRustApp.candidateProfile.languages">Languages</label>
+          <textarea class="form-control" name="languages" id="field_languages" data-cy="languages" formControlName="languages"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_education" jhiTranslate="jobSearchRustApp.candidateProfile.education">Education</label>
+          <textarea class="form-control" name="education" id="field_education" data-cy="education" formControlName="education"></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_certifications" jhiTranslate="jobSearchRustApp.candidateProfile.certifications"
+            >Certifications</label
+          >
+          <textarea
+            class="form-control"
+            name="certifications"
+            id="field_certifications"
+            data-cy="certifications"
+            formControlName="certifications"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_rawMarkdown" jhiTranslate="jobSearchRustApp.candidateProfile.rawMarkdown"
+            >Raw Markdown</label
+          >
+          <textarea
+            class="form-control"
+            name="rawMarkdown"
+            id="field_rawMarkdown"
+            data-cy="rawMarkdown"
+            formControlName="rawMarkdown"
+          ></textarea>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_cvFilename" jhiTranslate="jobSearchRustApp.candidateProfile.cvFilename">Cv Filename</label>
+          <input
+            type="text"
+            class="form-control"
+            name="cvFilename"
+            id="field_cvFilename"
+            data-cy="cvFilename"
+            formControlName="cvFilename"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_embeddingModel" jhiTranslate="jobSearchRustApp.candidateProfile.embeddingModel"
+            >Embedding Model</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="embeddingModel"
+            id="field_embeddingModel"
+            data-cy="embeddingModel"
+            formControlName="embeddingModel"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_embeddedAt" jhiTranslate="jobSearchRustApp.candidateProfile.embeddedAt">Embedded At</label>
+          <div class="d-flex">
+            <input
+              id="field_embeddedAt"
+              data-cy="embeddedAt"
+              type="datetime-local"
+              class="form-control"
+              name="embeddedAt"
+              formControlName="embeddedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="jobSearchRustApp.candidateProfile.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_updatedAt" jhiTranslate="jobSearchRustApp.candidateProfile.updatedAt">Updated At</label>
+          <div class="d-flex">
+            <input
+              id="field_updatedAt"
+              data-cy="updatedAt"
+              type="datetime-local"
+              class="form-control"
+              name="updatedAt"
+              formControlName="updatedAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

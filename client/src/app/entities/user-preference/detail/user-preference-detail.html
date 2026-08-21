@@ -1,0 +1,64 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (userPreference(); as userPreferenceRef) {
+    <div>
+      <h2 data-cy="userPreferenceDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.userPreference.detail.title">User Preference</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.userId">User Id</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.remoteOnly">Remote Only</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.remoteOnly }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.contractType">Contract Type</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.contractType }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.salaryMin">Salary Min</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.salaryMin }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.salaryMax">Salary Max</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.salaryMax }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.preferredRoles">Preferred Roles</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.preferredRoles }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.excludedTechnologies">Excluded Technologies</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.excludedTechnologies }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.userPreference.preferredLocations">Preferred Locations</span></dt>
+        <dd>
+          <span>{{ userPreferenceRef.preferredLocations }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/user-preference', userPreferenceRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>

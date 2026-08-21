@@ -1,0 +1,9 @@
+{
+  "jobSearchRustApp": {
+    "AutoApplyMode": {
+      "null": "",
+      "VALIDATION": "VALIDATION",
+      "AUTO": "AUTO"
+    }
+  }
+}

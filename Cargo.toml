@@ -1,0 +1,55 @@
+[workspace]
+resolver = "2"
+members = ["server"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["JHipster"]
+license = "Apache-2.0"
+
+[workspace.dependencies]
+axum = "0.7"
+tokio = { version = "1", features = ["full"] }
+diesel = { version = "=2.1.6", features = ["postgres", "r2d2", "chrono", "uuid", "64-column-tables"] }
+diesel_migrations = "=2.1.0"
+dotenvy = "0.15"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_qs = "0.13"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+argon2 = "0.5"
+rand = "0.8"
+jsonwebtoken = "9"
+validator = { version = "0.18", features = ["derive"] }
+async-trait = "0.1"
+lazy_static = "1.4"
+regex = "1"
+# OpenAPI/Swagger documentation
+# Note: Swagger UI is served from static files (JHipster's custom version with auth integration)
+utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-scalar = { version = "0.2", features = ["axum"] }
+
+# Tarpaulin configuration for code coverage
+# Run with: cargo tarpaulin --out Html --output-dir coverage
+[workspace.metadata.tarpaulin]
+# Output formats: Html, Xml, Json, Lcov
+out = ["Html"]
+# Output directory for coverage reports
+output-dir = "coverage"
+# Exclude test code from coverage
+exclude-files = ["**/tests/*", "**/*_test.rs"]
+# Run tests in release mode for faster execution
+release = false
+# Timeout for individual tests (in seconds)
+timeout = "120s"
+# Number of test threads
+test-threads = 1
+# Verbose output
+verbose = true

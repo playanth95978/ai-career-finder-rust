@@ -1,0 +1,38 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "backendType": "Rust",
+    "baseName": "jobSearchRust",
+    "clientFramework": "angular",
+    "creationTimestamp": 1702303386654,
+    "databaseType": "sql",
+    "devDatabaseType": "postgresql",
+    "entities": [
+      "JobOffer",
+      "CandidateProfile",
+      "JobApplication",
+      "UserPreference",
+      "AutoApplyConfig",
+      "RadarHit",
+      "RadarState",
+      "Conversation",
+      "CvResume",
+      "CvResumeVersion",
+      "OfferPositioning",
+      "OfferTailoredResume"
+    ],
+    "jhipsterVersion": "9.2.0",
+    "languages": ["fr", "en"],
+    "lastLiquibaseTimestamp": 1702304106000,
+    "nativeLanguage": "fr",
+    "packageName": "nc.opt.jobsearch",
+    "prodDatabaseType": "postgresql",
+    "testFrameworks": [],
+    "withAdminUi": false
+  },
+  "generator-jhipster-rust": {
+    "blueprintVersion": "1.0.1",
+    "rustVersion": "1.75.0"
+  }
+}

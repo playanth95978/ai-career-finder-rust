@@ -1,0 +1,40 @@
+{
+  "jobSearchRustApp": {
+    "candidateProfile": {
+      "home": {
+        "title": "CandidateProfiles",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Candidate Profile",
+        "createOrEditLabel": "Créer ou éditer un Candidate Profile",
+        "notFound": "Aucun Candidate Profile trouvé"
+      },
+      "created": "Un nouveau Candidate Profile a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Candidate Profile avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Candidate Profile avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Candidate Profile {{ id }} ?"
+      },
+      "detail": {
+        "title": "Candidate Profile"
+      },
+      "id": "ID",
+      "userId": "User Id",
+      "fullName": "Full Name",
+      "email": "Email",
+      "location": "Location",
+      "yearsOfExperience": "Years Of Experience",
+      "skills": "Skills",
+      "experiences": "Experiences",
+      "preferredRoles": "Preferred Roles",
+      "languages": "Languages",
+      "education": "Education",
+      "certifications": "Certifications",
+      "rawMarkdown": "Raw Markdown",
+      "cvFilename": "Cv Filename",
+      "embeddingModel": "Embedding Model",
+      "embeddedAt": "Embedded At",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    }
+  }
+}

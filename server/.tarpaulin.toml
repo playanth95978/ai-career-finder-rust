@@ -1,0 +1,23 @@
+# Track 1 Phase 0 (2026-05-11): tarpaulin configuration for generated scaffolds.
+#
+# Excludes files that aren't unit-testable from coverage measurement so the
+# denominator reflects code that CAN be covered, not code that can't.
+#
+# `server/src/main.rs` is process bootstrap: it builds the Axum router, attaches
+# middleware, calls `axum::serve`, and waits for Ctrl+C. Integration tests
+# construct their own TestServer via `test_utils::create_test_state`,
+# bypassing main.rs entirely — so even with 211 passing tests, main.rs
+# legitimately shows 0/176 coverage. Excluding it moved the v0.9.9 baseline
+# from 35.67% (631/1769) to 39.92% (636/1593, verified locally 2026-05-11).
+#
+# Path format note: tarpaulin reports file paths as WORKSPACE-relative
+# regardless of the cwd you invoke it from. So even though this file lives at
+# server/.tarpaulin.toml, the exclude pattern must use the workspace-relative
+# path `server/src/main.rs`, not the crate-relative `src/main.rs`. Globs like
+# `**/main.rs` also work but are less explicit about which file is excluded.
+#
+# Run from server/ directory:
+#   cargo tarpaulin
+
+[default]
+exclude-files = ["server/src/main.rs"]

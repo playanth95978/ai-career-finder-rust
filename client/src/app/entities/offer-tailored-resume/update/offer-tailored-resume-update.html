@@ -1,0 +1,102 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-offer-tailored-resume-heading"
+        data-cy="OfferTailoredResumeCreateUpdateHeading"
+        jhiTranslate="jobSearchRustApp.offerTailoredResume.home.createOrEditLabel"
+      >
+        Créer ou éditer un Offer Tailored Resume
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+
+        <div class="mb-3">
+          <label class="form-label" for="field_id" jhiTranslate="global.field.id">ID</label>
+          <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+        </div>
+        } @let userIdRef = editForm.get('userId')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_userId" jhiTranslate="jobSearchRustApp.offerTailoredResume.userId">User Id</label>
+          <input type="text" class="form-control" name="userId" id="field_userId" data-cy="userId" formControlName="userId" />
+          @if (userIdRef.invalid && (userIdRef.dirty || userIdRef.touched)) {
+          <div>
+            @if (userIdRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        @let dataRef = editForm.get('data')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_data" jhiTranslate="jobSearchRustApp.offerTailoredResume.data">Data</label>
+          <textarea class="form-control" name="data" id="field_data" data-cy="data" formControlName="data"></textarea>
+          @if (dataRef.invalid && (dataRef.dirty || dataRef.touched)) {
+          <div>
+            @if (dataRef.errors?.required) {
+            <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+            }
+          </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_title" jhiTranslate="jobSearchRustApp.offerTailoredResume.title">Title</label>
+          <input type="text" class="form-control" name="title" id="field_title" data-cy="title" formControlName="title" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdAt" jhiTranslate="jobSearchRustApp.offerTailoredResume.createdAt">Created At</label>
+          <div class="d-flex">
+            <input
+              id="field_createdAt"
+              data-cy="createdAt"
+              type="datetime-local"
+              class="form-control"
+              name="createdAt"
+              formControlName="createdAt"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_jobOffer" jhiTranslate="jobSearchRustApp.offerTailoredResume.jobOffer">Job Offer</label>
+          <select
+            class="form-control"
+            id="field_jobOffer"
+            data-cy="jobOffer"
+            name="jobOffer"
+            formControlName="jobOffer"
+            [compareWith]="compareJobOffer"
+          >
+            <option [ngValue]="null"></option>
+            @for (jobOfferOption of jobOffersSharedCollection(); track $index) {
+            <option [ngValue]="jobOfferOption">{{ jobOfferOption.id }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban" />&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving()"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save" />&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

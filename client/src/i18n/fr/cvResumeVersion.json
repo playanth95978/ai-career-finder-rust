@@ -1,0 +1,29 @@
+{
+  "jobSearchRustApp": {
+    "cvResumeVersion": {
+      "home": {
+        "title": "CvResumeVersions",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Cv Resume Version",
+        "createOrEditLabel": "Créer ou éditer un Cv Resume Version",
+        "notFound": "Aucun Cv Resume Version trouvé"
+      },
+      "created": "Un nouveau Cv Resume Version a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Cv Resume Version avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Cv Resume Version avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Cv Resume Version {{ id }} ?"
+      },
+      "detail": {
+        "title": "Cv Resume Version"
+      },
+      "id": "ID",
+      "versionNumber": "Version Number",
+      "title": "Title",
+      "template": "Template",
+      "data": "Data",
+      "createdAt": "Created At",
+      "resume": "Resume"
+    }
+  }
+}

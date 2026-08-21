@@ -1,0 +1,290 @@
+<div>
+  <h2 id="page-heading" data-cy="JobOfferHeading">
+    <span jhiTranslate="jobSearchRustApp.jobOffer.home.title">JobOffers</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading()">
+        <fa-icon icon="sync" [animation]="isLoading() ? 'spin' : undefined" />
+        <span jhiTranslate="jobSearchRustApp.jobOffer.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-job-offer"
+        [routerLink]="['/job-offer/new']"
+      >
+        <fa-icon icon="plus" />
+        <span jhiTranslate="jobSearchRustApp.jobOffer.home.createLabel">Créer un nouveau Job Offer</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (jobOffers().length === 0) {
+  <div class="alert alert-warning" id="no-result">
+    <span jhiTranslate="jobSearchRustApp.jobOffer.home.notFound">Aucun Job Offer trouvé</span>
+  </div>
+  } @else {
+  <div class="table-responsive table-entities" id="entities">
+    <table class="table table-striped" aria-describedby="page-heading">
+      <thead>
+        <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="global.field.id">ID</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.title">Title</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.company">Company</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.location">Location</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.country">Country</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.remote">Remote</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.description">Description</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.searchText">Search Text</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.skills">Skills</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.metadata">Metadata</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.rawPayload">Raw Payload</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.contentHash">Content Hash</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.embeddingStatus">Embedding Status</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.embeddingModel">Embedding Model</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.reindexVersion">Reindex Version</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.retryCount">Retry Count</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.indexingError">Indexing Error</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.source">Source</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.sourceId">Source Id</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.applyUrl">Apply Url</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.salaryMin">Salary Min</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.salaryMax">Salary Max</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.salaryCurrency">Salary Currency</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.contractType">Contract Type</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.experienceLevel">Experience Level</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.category">Category</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.sourceCategory">Source Category</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.publishedAt">Published At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.createdAt">Created At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.indexedAt">Indexed At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.updatedAt">Updated At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.expiresAt">Expires At</span>
+            </div>
+          </th>
+          <th scope="col">
+            <div class="d-flex">
+              <span jhiTranslate="jobSearchRustApp.jobOffer.lastCheckedAt">Last Checked At</span>
+            </div>
+          </th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (jobOffer of jobOffers(); track trackId(jobOffer)) {
+        <tr data-cy="entityTable">
+          <td><a [routerLink]="['/job-offer', jobOffer.id, 'view']">{{ jobOffer.id }}</a></td>
+          <td>{{ jobOffer.title }}</td>
+          <td>{{ jobOffer.company }}</td>
+          <td>{{ jobOffer.location }}</td>
+          <td>{{ jobOffer.country }}</td>
+          <td>{{ jobOffer.remote }}</td>
+          <td>{{ jobOffer.description }}</td>
+          <td>{{ jobOffer.searchText }}</td>
+          <td>{{ jobOffer.skills }}</td>
+          <td>{{ jobOffer.metadata }}</td>
+          <td>{{ jobOffer.rawPayload }}</td>
+          <td>{{ jobOffer.contentHash }}</td>
+          <td [jhiTranslate]="'jobSearchRustApp.EmbeddingStatus.' + (jobOffer.embeddingStatus ?? 'null')">
+            {{
+            {"null":"","STUB":"STUB","PENDING":"PENDING","PROCESSING":"PROCESSING","COMPLETED":"COMPLETED","FAILED":"FAILED"}[jobOffer.embeddingStatus
+            ?? 'null'] }}
+          </td>
+          <td>{{ jobOffer.embeddingModel }}</td>
+          <td>{{ jobOffer.reindexVersion }}</td>
+          <td>{{ jobOffer.retryCount }}</td>
+          <td>{{ jobOffer.indexingError }}</td>
+          <td [jhiTranslate]="'jobSearchRustApp.JobSource.' + (jobOffer.source ?? 'null')">
+            {{
+            {"null":"","GREENHOUSE":"GREENHOUSE","LEVER":"LEVER","SMARTRECRUITERS":"SMARTRECRUITERS","ASHBY":"ASHBY","WORKABLE":"WORKABLE","RECRUITEE":"RECRUITEE","REMOTEOK":"REMOTEOK","JOBICY":"JOBICY","ADZUNA":"ADZUNA","CAREERJET":"CAREERJET","WEWORKREMOTELY":"WEWORKREMOTELY","FRANCE_TRAVAIL":"FRANCE_TRAVAIL","EMPLOI_NC":"EMPLOI_NC","HELLOWORK":"HELLOWORK","SEEK":"SEEK","MANUAL":"MANUAL","LINKEDIN":"LINKEDIN","WELCOME_TO_THE_JUNGLE":"WELCOME_TO_THE_JUNGLE"}[jobOffer.source
+            ?? 'null'] }}
+          </td>
+          <td>{{ jobOffer.sourceId }}</td>
+          <td>{{ jobOffer.applyUrl }}</td>
+          <td>{{ jobOffer.salaryMin }}</td>
+          <td>{{ jobOffer.salaryMax }}</td>
+          <td>{{ jobOffer.salaryCurrency }}</td>
+          <td>{{ jobOffer.contractType }}</td>
+          <td>{{ jobOffer.experienceLevel }}</td>
+          <td>{{ jobOffer.category }}</td>
+          <td>{{ jobOffer.sourceCategory }}</td>
+          <td>{{ jobOffer.publishedAt | formatMediumDatetime }}</td>
+          <td>{{ jobOffer.createdAt | formatMediumDatetime }}</td>
+          <td>{{ jobOffer.indexedAt | formatMediumDatetime }}</td>
+          <td>{{ jobOffer.updatedAt | formatMediumDatetime }}</td>
+          <td>{{ jobOffer.expiresAt | formatMediumDatetime }}</td>
+          <td>{{ jobOffer.lastCheckedAt | formatMediumDatetime }}</td>
+          <td class="text-end">
+            <div class="btn-group">
+              <a [routerLink]="['/job-offer', jobOffer.id, 'view']" class="btn btn-info btn-sm" data-cy="entityDetailsButton">
+                <fa-icon icon="eye" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+              </a>
+
+              <a [routerLink]="['/job-offer', jobOffer.id, 'edit']" class="btn btn-primary btn-sm" data-cy="entityEditButton">
+                <fa-icon icon="pencil-alt" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+              </a>
+
+              <button type="submit" (click)="delete(jobOffer)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                <fa-icon icon="times" />
+                <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @if (jobOffers().length > 0) {
+  <div>
+    <div class="d-flex justify-content-center">
+      <jhi-item-count [params]="{ page: page(), totalItems: totalItems(), itemsPerPage: itemsPerPage() }" />
+    </div>
+
+    <div class="d-flex justify-content-center">
+      <ngb-pagination
+        [collectionSize]="totalItems()"
+        [page]="page()"
+        [pageSize]="itemsPerPage()"
+        [maxSize]="5"
+        [rotate]="true"
+        [boundaryLinks]="true"
+        (pageChange)="navigateToPage($event)"
+      />
+    </div>
+  </div>
+  }
+</div>

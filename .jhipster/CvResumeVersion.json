@@ -1,0 +1,40 @@
+{
+  "annotations": {
+    "changelogDate": "20231211141306"
+  },
+  "applications": ["jobSearchRust"],
+  "fields": [
+    {
+      "fieldName": "versionNumber",
+      "fieldType": "Integer",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "title",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "template",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "data",
+      "fieldType": "TextBlob",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant"
+    }
+  ],
+  "name": "CvResumeVersion",
+  "relationships": [
+    {
+      "otherEntityName": "cvResume",
+      "relationshipName": "resume",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no"
+}

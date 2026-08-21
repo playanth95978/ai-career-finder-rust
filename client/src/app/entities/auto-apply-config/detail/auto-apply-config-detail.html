@@ -1,0 +1,54 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (autoApplyConfig(); as autoApplyConfigRef) {
+    <div>
+      <h2 data-cy="autoApplyConfigDetailsHeading">
+        <span jhiTranslate="jobSearchRustApp.autoApplyConfig.detail.title">Auto Apply Config</span>
+      </h2>
+
+      <hr />
+
+      <jhi-alert-error />
+
+      <jhi-alert />
+
+      <dl class="row-md jh-entity-details">
+        <dt><span jhiTranslate="global.field.id">ID</span></dt>
+        <dd>
+          <span>{{ autoApplyConfigRef.id }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.autoApplyConfig.userId">User Id</span></dt>
+        <dd>
+          <span>{{ autoApplyConfigRef.userId }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.autoApplyConfig.mode">Mode</span></dt>
+        <dd>
+          <span [jhiTranslate]="'jobSearchRustApp.AutoApplyMode.' + (autoApplyConfigRef.mode ?? 'null')"
+            >{{ {"null":"","VALIDATION":"VALIDATION","AUTO":"AUTO"}[autoApplyConfigRef.mode ?? 'null'] }}</span
+          >
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.autoApplyConfig.minScore">Min Score</span></dt>
+        <dd>
+          <span>{{ autoApplyConfigRef.minScore }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.autoApplyConfig.maxPerDay">Max Per Day</span></dt>
+        <dd>
+          <span>{{ autoApplyConfigRef.maxPerDay }}</span>
+        </dd>
+        <dt><span jhiTranslate="jobSearchRustApp.autoApplyConfig.sources">Sources</span></dt>
+        <dd>
+          <span>{{ autoApplyConfigRef.sources }}</span>
+        </dd>
+      </dl>
+
+      <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+        <fa-icon icon="arrow-left" />&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+      </button>
+
+      <button type="button" [routerLink]="['/auto-apply-config', autoApplyConfigRef.id, 'edit']" class="btn btn-primary">
+        <fa-icon icon="pencil-alt" />&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+      </button>
+    </div>
+    }
+  </div>
+</div>
