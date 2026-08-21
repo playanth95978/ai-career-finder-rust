@@ -35,6 +35,10 @@ pub mod offer_tailored_resume_service;
 pub use offer_tailored_resume_service::*;
 pub mod ai_service;
 pub use ai_service::*;
+pub mod embedding_service;
+pub use embedding_service::*;
+pub mod cv_extraction_service;
+pub use cv_extraction_service::*;
 pub mod mistral_ocr_service;
 pub use mistral_ocr_service::*;
 
