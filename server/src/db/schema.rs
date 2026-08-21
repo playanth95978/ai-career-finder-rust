@@ -43,7 +43,7 @@ diesel::joinable!(user_authorities -> authorities (authority_name));
 // with E0432/E0433.
 diesel::table! {
     job_offer (id) {
-        id -> Int4,
+        id -> Uuid,
         title -> Varchar,
         company -> Nullable<Varchar>,
         location -> Nullable<Varchar>,
@@ -84,7 +84,7 @@ diesel::table! {
 }
 diesel::table! {
     candidate_profile (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         full_name -> Nullable<Varchar>,
         email -> Nullable<Varchar>,
@@ -110,7 +110,7 @@ diesel::table! {
 }
 diesel::table! {
     job_application (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         status -> Nullable<Varchar>,
         cover_letter -> Nullable<Varchar>,
@@ -119,8 +119,8 @@ diesel::table! {
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
         applied_at -> Nullable<Timestamp>,
-        jobOffer_id -> Nullable<Int4>,
-        candidateProfile_id -> Nullable<Int4>,
+        jobOffer_id -> Nullable<Uuid>,
+        candidateProfile_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
@@ -129,7 +129,7 @@ diesel::table! {
 }
 diesel::table! {
     user_preference (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         remote_only -> Nullable<Bool>,
         contract_type -> Nullable<Varchar>,
@@ -146,7 +146,7 @@ diesel::table! {
 }
 diesel::table! {
     auto_apply_config (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         mode -> Nullable<Varchar>,
         min_score -> Nullable<Float8>,
@@ -160,14 +160,14 @@ diesel::table! {
 }
 diesel::table! {
     radar_hit (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         score -> Nullable<Float8>,
         why_you -> Nullable<Varchar>,
         seen -> Nullable<Bool>,
         dismissed -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
-        jobOffer_id -> Nullable<Int4>,
+        jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
@@ -176,7 +176,7 @@ diesel::table! {
 }
 diesel::table! {
     radar_state (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         last_offer_at -> Nullable<Timestamp>,
         created_by -> Nullable<Varchar>,
@@ -187,7 +187,7 @@ diesel::table! {
 }
 diesel::table! {
     conversation (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         title -> Nullable<Varchar>,
         summary -> Nullable<Varchar>,
@@ -203,7 +203,7 @@ diesel::table! {
 }
 diesel::table! {
     cv_resume (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         title -> Nullable<Varchar>,
         template -> Nullable<Varchar>,
@@ -219,13 +219,13 @@ diesel::table! {
 }
 diesel::table! {
     cv_resume_version (id) {
-        id -> Int4,
+        id -> Uuid,
         version_number -> Int4,
         title -> Nullable<Varchar>,
         template -> Nullable<Varchar>,
         data -> Varchar,
         created_at -> Nullable<Timestamp>,
-        resume_id -> Nullable<Int4>,
+        resume_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
@@ -234,11 +234,11 @@ diesel::table! {
 }
 diesel::table! {
     offer_positioning (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         result -> Varchar,
         created_at -> Nullable<Timestamp>,
-        jobOffer_id -> Nullable<Int4>,
+        jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
@@ -247,12 +247,12 @@ diesel::table! {
 }
 diesel::table! {
     offer_tailored_resume (id) {
-        id -> Int4,
+        id -> Uuid,
         user_id -> Varchar,
         data -> Varchar,
         title -> Nullable<Varchar>,
         created_at -> Nullable<Timestamp>,
-        jobOffer_id -> Nullable<Int4>,
+        jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,

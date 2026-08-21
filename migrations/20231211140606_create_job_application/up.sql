@@ -1,6 +1,6 @@
 -- Create job_application table
 CREATE TABLE job_application (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     status VARCHAR(255),
     cover_letter VARCHAR(255),
@@ -9,8 +9,8 @@ CREATE TABLE job_application (
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     applied_at TIMESTAMP,
-    jobOffer_id INTEGER REFERENCES job_offer(id),
-    candidateProfile_id INTEGER REFERENCES candidate_profile(id),
+    jobOffer_id UUID REFERENCES job_offer(id),
+    candidateProfile_id UUID REFERENCES candidate_profile(id),
     created_by VARCHAR(50),
     created_date TIMESTAMP,
     last_modified_by VARCHAR(50),

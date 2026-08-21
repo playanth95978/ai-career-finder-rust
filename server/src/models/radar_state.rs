@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// RadarState entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::radar_state)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RadarState {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub last_offer_at: Option<NaiveDateTime>,
     pub created_by: Option<String>,
@@ -45,7 +46,7 @@ mod tests {
     #[test]
     fn test_radarState_clone() {
         let entity = RadarState {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             last_offer_at: None,
             created_by: Some("system".to_string()),
@@ -60,7 +61,7 @@ mod tests {
     #[test]
     fn test_radarState_debug() {
         let entity = RadarState {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             last_offer_at: None,
             created_by: None,
@@ -99,7 +100,7 @@ mod tests {
     #[test]
     fn test_radarState_serialization() {
         let entity = RadarState {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             last_offer_at: None,
             created_by: None,
@@ -108,6 +109,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

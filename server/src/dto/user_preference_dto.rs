@@ -3,12 +3,13 @@ use utoipa::ToSchema;
 use validator::Validate;
 
 use crate::models::UserPreference;
+use uuid::Uuid;
 
 /// UserPreference DTO for API responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct UserPreferenceDto {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_only: Option<bool>,
@@ -100,7 +101,7 @@ mod tests {
 
         fn create_test_entity() -> UserPreference {
             UserPreference {
-                id: 1,
+                id: Uuid::nil(),
                 user_id: "test_value".to_string(),
                 remote_only: Some(true),
                 contract_type: Some("test_value".to_string()),
@@ -120,7 +121,7 @@ mod tests {
         fn test_userPreference_dto_from_entity() {
             let entity = create_test_entity();
             let dto = UserPreferenceDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -130,14 +131,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = UserPreferenceDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_userPreference_dto_deserialization() {
-            let json = r#"{"id":1,"userId":"test"}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","userId":"test"}"#;
             let dto: UserPreferenceDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

@@ -5,12 +5,13 @@ use chrono::NaiveDateTime;
 use crate::dto::common::deserialize_option_naive_datetime;
 
 use crate::models::CvResume;
+use uuid::Uuid;
 
 /// CvResume DTO for API responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CvResumeDto {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -101,7 +102,7 @@ mod tests {
 
         fn create_test_entity() -> CvResume {
             CvResume {
-                id: 1,
+                id: Uuid::nil(),
                 user_id: "test_value".to_string(),
                 title: Some("test_value".to_string()),
                 template: Some("test_value".to_string()),
@@ -120,7 +121,7 @@ mod tests {
         fn test_cvResume_dto_from_entity() {
             let entity = create_test_entity();
             let dto = CvResumeDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -130,14 +131,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = CvResumeDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_cvResume_dto_deserialization() {
-            let json = r#"{"id":1,"userId":"test","data":"test","versionNumber":1}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","userId":"test","data":"test","versionNumber":1}"#;
             let dto: CvResumeDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

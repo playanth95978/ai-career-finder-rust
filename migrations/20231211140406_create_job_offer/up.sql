@@ -1,6 +1,6 @@
 -- Create job_offer table
 CREATE TABLE job_offer (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(255) NOT NULL,
     company VARCHAR(255),
     location VARCHAR(255),

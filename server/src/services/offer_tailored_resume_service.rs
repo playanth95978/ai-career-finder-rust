@@ -7,6 +7,7 @@ use crate::db::schema::job_offer;
 use crate::dto::{CreateOfferTailoredResumeDto, PageRequest, UpdateOfferTailoredResumeDto};
 use crate::errors::AppError;
 use crate::models::{NewOfferTailoredResume, UpdateOfferTailoredResume, OfferTailoredResume, JobOffer};
+use uuid::Uuid;
 
 pub struct OfferTailoredResumeService;
 
@@ -145,7 +146,7 @@ impl OfferTailoredResumeService {
     }
 
     /// Find offerTailoredResume by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<OfferTailoredResume, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<OfferTailoredResume, AppError> {
         offer_tailored_resume::table
             .find(id)
             .select(OfferTailoredResume::as_select()).first(conn)
@@ -188,7 +189,7 @@ impl OfferTailoredResumeService {
     /// Update an existing offerTailoredResume
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateOfferTailoredResumeDto,
         modified_by: &str,
     ) -> Result<OfferTailoredResume, AppError> {
@@ -213,7 +214,7 @@ impl OfferTailoredResumeService {
     }
 
     /// Delete a offerTailoredResume
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(offer_tailored_resume::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -222,7 +223,7 @@ impl OfferTailoredResumeService {
     }
 
     /// Find related jobOffer by ID
-    pub fn find_jobOffer_by_id(conn: &mut DbConnection, id: i32) -> Result<Option<JobOffer>, AppError> {
+    pub fn find_jobOffer_by_id(conn: &mut DbConnection, id: Uuid) -> Result<Option<JobOffer>, AppError> {
         job_offer::table
             .find(id)
             .select(JobOffer::as_select()).first(conn)
@@ -266,7 +267,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -290,7 +291,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = OfferTailoredResumeService::find_by_id(&mut conn, 99999);
+        let result = OfferTailoredResumeService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 
@@ -459,9 +460,9 @@ mod tests {
     fn test_find_jobOffer_by_id_returns_none_for_nonexistent() {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
-        // i32::MAX is a valid id type but vanishingly unlikely to exist in
+        // Uuid::new_v4() is a valid id type but vanishingly unlikely to exist in
         // a freshly-migrated test DB.
-        let result = OfferTailoredResumeService::find_jobOffer_by_id(&mut conn, i32::MAX);
+        let result = OfferTailoredResumeService::find_jobOffer_by_id(&mut conn, Uuid::new_v4());
         assert!(matches!(result, Ok(None)), "expected Ok(None), got {:?}", result);
     }
 }

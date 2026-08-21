@@ -1,19 +1,20 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// CvResumeVersion entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::cv_resume_version)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct CvResumeVersion {
-    pub id: i32,
+    pub id: Uuid,
     pub version_number: i32,
     pub title: Option<String>,
     pub template: Option<String>,
     pub data: String,
     pub created_at: Option<NaiveDateTime>,
-    pub resume_id: Option<i32>,
+    pub resume_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -29,7 +30,7 @@ pub struct NewCvResumeVersion {
     pub template: Option<String>,
     pub data: String,
     pub created_at: Option<NaiveDateTime>,
-    pub resume_id: Option<i32>,
+    pub resume_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -45,7 +46,7 @@ pub struct UpdateCvResumeVersion {
     pub template: Option<String>,
     pub data: Option<String>,
     pub created_at: Option<NaiveDateTime>,
-    pub resume_id: Option<Option<i32>>,
+    pub resume_id: Option<Option<Uuid>>,
     pub last_modified_by: Option<String>,
     pub last_modified_date: Option<NaiveDateTime>,
 }
@@ -57,7 +58,7 @@ mod tests {
     #[test]
     fn test_cvResumeVersion_clone() {
         let entity = CvResumeVersion {
-            id: 1,
+            id: Uuid::nil(),
             version_number: 42,
             title: None,
             template: None,
@@ -76,7 +77,7 @@ mod tests {
     #[test]
     fn test_cvResumeVersion_debug() {
         let entity = CvResumeVersion {
-            id: 1,
+            id: Uuid::nil(),
             version_number: 42,
             title: None,
             template: None,
@@ -117,7 +118,7 @@ mod tests {
             template: Some("updated".to_string()),
             data: Some("updated".to_string()),
             created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-            resume_id: Some(Some(1)),
+            resume_id: Some(Some(Uuid::nil())),
             last_modified_by: Some("updater".to_string()),
             last_modified_date: None,
         };
@@ -127,7 +128,7 @@ mod tests {
     #[test]
     fn test_cvResumeVersion_serialization() {
         let entity = CvResumeVersion {
-            id: 1,
+            id: Uuid::nil(),
             version_number: 42,
             title: None,
             template: None,
@@ -140,6 +141,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

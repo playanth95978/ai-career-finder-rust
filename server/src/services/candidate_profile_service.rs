@@ -6,6 +6,7 @@ use crate::db::schema::candidate_profile;
 use crate::dto::{CreateCandidateProfileDto, PageRequest, UpdateCandidateProfileDto};
 use crate::errors::AppError;
 use crate::models::{NewCandidateProfile, UpdateCandidateProfile, CandidateProfile};
+use uuid::Uuid;
 
 pub struct CandidateProfileService;
 
@@ -339,7 +340,7 @@ impl CandidateProfileService {
     }
 
     /// Find candidateProfile by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<CandidateProfile, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<CandidateProfile, AppError> {
         candidate_profile::table
             .find(id)
             .select(CandidateProfile::as_select()).first(conn)
@@ -394,7 +395,7 @@ impl CandidateProfileService {
     /// Update an existing candidateProfile
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateCandidateProfileDto,
         modified_by: &str,
     ) -> Result<CandidateProfile, AppError> {
@@ -431,7 +432,7 @@ impl CandidateProfileService {
     }
 
     /// Delete a candidateProfile
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(candidate_profile::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -487,7 +488,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -511,7 +512,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = CandidateProfileService::find_by_id(&mut conn, 99999);
+        let result = CandidateProfileService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

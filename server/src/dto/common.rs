@@ -3,6 +3,7 @@
 use serde::{Deserialize, Deserializer};
 use utoipa::ToSchema;
 use chrono::NaiveDateTime;
+use uuid::Uuid;
 
 /// Parse an i32 from a serde_json::Value, accepting either a number or a string-encoded
 /// integer. React frontends send `{"id": "1"}` (string) for multi-select form values,
@@ -15,6 +16,15 @@ fn parse_i32_value<E: serde::de::Error>(value: &serde_json::Value) -> Result<i32
             .ok_or_else(|| E::custom("id is not a valid i32")),
         serde_json::Value::String(s) => s.parse::<i32>().map_err(E::custom),
         _ => Err(E::custom("id must be a number or string")),
+    }
+}
+
+/// Parse un UUID depuis une valeur JSON. Les ids des entites metier sont des UUID : le JSON
+/// n'ayant pas de type dedie, ils arrivent sous forme de chaine.
+fn parse_uuid_value<E: serde::de::Error>(value: &serde_json::Value) -> Result<Uuid, E> {
+    match value {
+        serde_json::Value::String(s) => Uuid::parse_str(s).map_err(E::custom),
+        _ => Err(E::custom("id must be a UUID string")),
     }
 }
 
@@ -46,7 +56,7 @@ impl<'de> Deserialize<'de> for RelationshipId {
 
 /// Custom deserializer for optional relationship fields
 /// Handles: null, plain integer/string ID, or object with id field (number or string)
-pub fn deserialize_optional_relationship<'de, D>(deserializer: D) -> Result<Option<i32>, D::Error>
+pub fn deserialize_optional_relationship<'de, D>(deserializer: D) -> Result<Option<Uuid>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -59,9 +69,9 @@ where
             let id_value = map
                 .get("id")
                 .ok_or_else(|| D::Error::custom("missing id field"))?;
-            Ok(Some(parse_i32_value::<D::Error>(id_value)?))
+            Ok(Some(parse_uuid_value::<D::Error>(id_value)?))
         }
-        Some(value) => Ok(Some(parse_i32_value::<D::Error>(&value)?)),
+        Some(value) => Ok(Some(parse_uuid_value::<D::Error>(&value)?)),
     }
 }
 
@@ -138,7 +148,7 @@ mod tests {
     #[derive(Debug, Deserialize)]
     struct OptionalRelWrapper {
         #[serde(deserialize_with = "deserialize_optional_relationship", default)]
-        rel: Option<i32>,
+        rel: Option<Uuid>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -220,21 +230,23 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize_optional_relationship_handles_integer_form() {
-        let w: OptionalRelWrapper = serde_json::from_str(r#"{"rel": 5}"#).unwrap();
-        assert_eq!(w.rel, Some(5));
+    fn test_deserialize_optional_relationship_rejects_integer_form() {
+        // Les ids etant des UUID, un entier n'est plus une reference valide.
+        let err = serde_json::from_str::<OptionalRelWrapper>(r#"{"rel": 5}"#).unwrap_err();
+        assert!(err.to_string().contains("UUID string"), "got: {}", err);
     }
 
     #[test]
     fn test_deserialize_optional_relationship_handles_string_form() {
-        let w: OptionalRelWrapper = serde_json::from_str(r#"{"rel": "9"}"#).unwrap();
-        assert_eq!(w.rel, Some(9));
+        let w: OptionalRelWrapper = serde_json::from_str(r#"{"rel": "550e8400-e29b-41d4-a716-446655440000"}"#).unwrap();
+        assert_eq!(w.rel, Some(Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()));
     }
 
     #[test]
     fn test_deserialize_optional_relationship_handles_object_form() {
-        let w: OptionalRelWrapper = serde_json::from_str(r#"{"rel": {"id": 3, "name": "x"}}"#).unwrap();
-        assert_eq!(w.rel, Some(3));
+        let w: OptionalRelWrapper =
+            serde_json::from_str(r#"{"rel": {"id": "550e8400-e29b-41d4-a716-446655440000", "name": "x"}}"#).unwrap();
+        assert_eq!(w.rel, Some(Uuid::parse_str("550e8400-e29b-41d4-a716-446655440000").unwrap()));
     }
 
     #[test]

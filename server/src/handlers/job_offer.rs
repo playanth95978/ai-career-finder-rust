@@ -12,6 +12,7 @@ use crate::middleware::auth::AuthUser;
 use crate::models::RoleType;
 use crate::services::JobOfferService;
 use crate::AppState;
+use uuid::Uuid;
 
 /// JobOffer routes
 pub fn routes() -> Router<AppState> {
@@ -68,7 +69,7 @@ pub async fn get_all(
     tag = "job-offers",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "JobOffer ID")
+        ("id" = Uuid, Path, description = "JobOffer ID")
     ),
     responses(
         (status = 200, description = "JobOffer found", body = JobOfferDto),
@@ -80,7 +81,7 @@ pub async fn get_all(
 pub async fn get_one(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<JobOfferDto>, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
         return Err(AppError::Forbidden("Access denied".to_string()));
@@ -129,7 +130,7 @@ pub async fn create(
     tag = "job-offers",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "JobOffer ID")
+        ("id" = Uuid, Path, description = "JobOffer ID")
     ),
     request_body = UpdateJobOfferDto,
     responses(
@@ -143,7 +144,7 @@ pub async fn create(
 pub async fn update(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
     Json(dto): Json<UpdateJobOfferDto>,
 ) -> Result<Json<JobOfferDto>, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
@@ -164,7 +165,7 @@ pub async fn update(
     tag = "job-offers",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "JobOffer ID")
+        ("id" = Uuid, Path, description = "JobOffer ID")
     ),
     responses(
         (status = 204, description = "JobOffer deleted successfully"),
@@ -176,7 +177,7 @@ pub async fn update(
 pub async fn remove(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
         return Err(AppError::Forbidden("Access denied".to_string()));

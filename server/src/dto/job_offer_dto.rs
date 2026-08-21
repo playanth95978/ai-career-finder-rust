@@ -5,12 +5,13 @@ use chrono::NaiveDateTime;
 use crate::dto::common::deserialize_option_naive_datetime;
 
 use crate::models::JobOffer;
+use uuid::Uuid;
 
 /// JobOffer DTO for API responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct JobOfferDto {
-    pub id: i32,
+    pub id: Uuid,
     pub title: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub company: Option<String>,
@@ -242,7 +243,7 @@ mod tests {
 
         fn create_test_entity() -> JobOffer {
             JobOffer {
-                id: 1,
+                id: Uuid::nil(),
                 title: "test_value".to_string(),
                 company: Some("test_value".to_string()),
                 location: Some("test_value".to_string()),
@@ -286,7 +287,7 @@ mod tests {
         fn test_jobOffer_dto_from_entity() {
             let entity = create_test_entity();
             let dto = JobOfferDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -296,14 +297,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = JobOfferDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_jobOffer_dto_deserialization() {
-            let json = r#"{"id":1,"title":"test"}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","title":"test"}"#;
             let dto: JobOfferDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

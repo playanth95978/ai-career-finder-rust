@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// CandidateProfile entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::candidate_profile)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct CandidateProfile {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub full_name: Option<String>,
     pub email: Option<String>,
@@ -90,7 +91,7 @@ mod tests {
     #[test]
     fn test_candidateProfile_clone() {
         let entity = CandidateProfile {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             full_name: None,
             email: None,
@@ -120,7 +121,7 @@ mod tests {
     #[test]
     fn test_candidateProfile_debug() {
         let entity = CandidateProfile {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             full_name: None,
             email: None,
@@ -204,7 +205,7 @@ mod tests {
     #[test]
     fn test_candidateProfile_serialization() {
         let entity = CandidateProfile {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             full_name: None,
             email: None,
@@ -228,6 +229,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

@@ -6,12 +6,13 @@ use crate::dto::common::deserialize_option_naive_datetime;
 use crate::dto::common::deserialize_optional_relationship;
 
 use crate::models::{OfferTailoredResume, JobOffer};
+use uuid::Uuid;
 
 /// Minimal DTO for JobOffer relationship in OfferTailoredResume responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct OfferTailoredResumeJobOfferRelationDto {
-    pub id: i32,
+    pub id: Uuid,
     pub title: String,
 }
 
@@ -28,7 +29,7 @@ impl From<JobOffer> for OfferTailoredResumeJobOfferRelationDto {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct OfferTailoredResumeDto {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub data: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -97,7 +98,7 @@ pub struct CreateOfferTailoredResumeDto {
     #[serde(default, deserialize_with = "deserialize_option_naive_datetime")]
     pub created_at: Option<NaiveDateTime>,
     #[serde(default, rename = "jobOffer", deserialize_with = "deserialize_optional_relationship")]
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
 }
 
 impl CreateOfferTailoredResumeDto {
@@ -113,7 +114,7 @@ pub struct UpdateOfferTailoredResumeDto {
     #[serde(default, deserialize_with = "deserialize_option_naive_datetime")]
     pub created_at: Option<NaiveDateTime>,
     #[serde(default, rename = "jobOffer", deserialize_with = "deserialize_optional_relationship")]
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
 }
 
 impl UpdateOfferTailoredResumeDto {
@@ -130,12 +131,12 @@ mod tests {
 
         fn create_test_entity() -> OfferTailoredResume {
             OfferTailoredResume {
-                id: 1,
+                id: Uuid::nil(),
                 user_id: "test_value".to_string(),
                 data: "test_value".to_string(),
                 title: Some("test_value".to_string()),
                 created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-                jobOffer_id: Some(1),
+                jobOffer_id: Some(Uuid::nil()),
                 created_by: Some("system".to_string()),
                 created_date: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
                 last_modified_by: Some("admin".to_string()),
@@ -147,7 +148,7 @@ mod tests {
         fn test_offerTailoredResume_dto_from_entity() {
             let entity = create_test_entity();
             let dto = OfferTailoredResumeDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -157,14 +158,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = OfferTailoredResumeDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_offerTailoredResume_dto_deserialization() {
-            let json = r#"{"id":1,"userId":"test","data":"test"}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","userId":"test","data":"test"}"#;
             let dto: OfferTailoredResumeDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

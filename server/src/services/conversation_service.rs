@@ -6,6 +6,7 @@ use crate::db::schema::conversation;
 use crate::dto::{CreateConversationDto, PageRequest, UpdateConversationDto};
 use crate::errors::AppError;
 use crate::models::{NewConversation, UpdateConversation, Conversation};
+use uuid::Uuid;
 
 pub struct ConversationService;
 
@@ -189,7 +190,7 @@ impl ConversationService {
     }
 
     /// Find conversation by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<Conversation, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<Conversation, AppError> {
         conversation::table
             .find(id)
             .select(Conversation::as_select()).first(conn)
@@ -234,7 +235,7 @@ impl ConversationService {
     /// Update an existing conversation
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateConversationDto,
         modified_by: &str,
     ) -> Result<Conversation, AppError> {
@@ -261,7 +262,7 @@ impl ConversationService {
     }
 
     /// Delete a conversation
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(conversation::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -307,7 +308,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -331,7 +332,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = ConversationService::find_by_id(&mut conn, 99999);
+        let result = ConversationService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

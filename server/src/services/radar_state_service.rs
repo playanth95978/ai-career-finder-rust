@@ -6,6 +6,7 @@ use crate::db::schema::radar_state;
 use crate::dto::{CreateRadarStateDto, PageRequest, UpdateRadarStateDto};
 use crate::errors::AppError;
 use crate::models::{NewRadarState, UpdateRadarState, RadarState};
+use uuid::Uuid;
 
 pub struct RadarStateService;
 
@@ -114,7 +115,7 @@ impl RadarStateService {
     }
 
     /// Find radarState by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<RadarState, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<RadarState, AppError> {
         radar_state::table
             .find(id)
             .select(RadarState::as_select()).first(conn)
@@ -154,7 +155,7 @@ impl RadarStateService {
     /// Update an existing radarState
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateRadarStateDto,
         modified_by: &str,
     ) -> Result<RadarState, AppError> {
@@ -176,7 +177,7 @@ impl RadarStateService {
     }
 
     /// Delete a radarState
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(radar_state::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -217,7 +218,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -241,7 +242,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = RadarStateService::find_by_id(&mut conn, 99999);
+        let result = RadarStateService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

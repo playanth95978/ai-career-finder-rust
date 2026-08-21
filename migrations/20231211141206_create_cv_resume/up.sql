@@ -1,6 +1,6 @@
 -- Create cv_resume table
 CREATE TABLE cv_resume (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL UNIQUE,
     title VARCHAR(255),
     template VARCHAR(255),

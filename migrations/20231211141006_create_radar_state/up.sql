@@ -1,6 +1,6 @@
 -- Create radar_state table
 CREATE TABLE radar_state (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL UNIQUE,
     last_offer_at TIMESTAMP,
     created_by VARCHAR(50),

@@ -1,6 +1,6 @@
 -- Create candidate_profile table
 CREATE TABLE candidate_profile (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     full_name VARCHAR(255),
     email VARCHAR(255),

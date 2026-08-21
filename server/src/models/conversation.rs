@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// Conversation entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::conversation)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct Conversation {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub title: Option<String>,
     pub summary: Option<String>,
@@ -60,7 +61,7 @@ mod tests {
     #[test]
     fn test_conversation_clone() {
         let entity = Conversation {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             summary: None,
@@ -80,7 +81,7 @@ mod tests {
     #[test]
     fn test_conversation_debug() {
         let entity = Conversation {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             summary: None,
@@ -134,7 +135,7 @@ mod tests {
     #[test]
     fn test_conversation_serialization() {
         let entity = Conversation {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             summary: None,
@@ -148,6 +149,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

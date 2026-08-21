@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// AutoApplyConfig entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::auto_apply_config)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AutoApplyConfig {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub mode: Option<String>,
     pub min_score: Option<f64>,
@@ -54,7 +55,7 @@ mod tests {
     #[test]
     fn test_autoApplyConfig_clone() {
         let entity = AutoApplyConfig {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             mode: None,
             min_score: None,
@@ -72,7 +73,7 @@ mod tests {
     #[test]
     fn test_autoApplyConfig_debug() {
         let entity = AutoApplyConfig {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             mode: None,
             min_score: None,
@@ -120,7 +121,7 @@ mod tests {
     #[test]
     fn test_autoApplyConfig_serialization() {
         let entity = AutoApplyConfig {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             mode: None,
             min_score: None,
@@ -132,6 +133,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

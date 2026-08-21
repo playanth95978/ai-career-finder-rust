@@ -7,6 +7,7 @@ use crate::db::schema::cv_resume;
 use crate::dto::{CreateCvResumeVersionDto, PageRequest, UpdateCvResumeVersionDto};
 use crate::errors::AppError;
 use crate::models::{NewCvResumeVersion, UpdateCvResumeVersion, CvResumeVersion, CvResume};
+use uuid::Uuid;
 
 pub struct CvResumeVersionService;
 
@@ -160,7 +161,7 @@ impl CvResumeVersionService {
     }
 
     /// Find cvResumeVersion by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<CvResumeVersion, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<CvResumeVersion, AppError> {
         cv_resume_version::table
             .find(id)
             .select(CvResumeVersion::as_select()).first(conn)
@@ -204,7 +205,7 @@ impl CvResumeVersionService {
     /// Update an existing cvResumeVersion
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateCvResumeVersionDto,
         modified_by: &str,
     ) -> Result<CvResumeVersion, AppError> {
@@ -230,7 +231,7 @@ impl CvResumeVersionService {
     }
 
     /// Delete a cvResumeVersion
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(cv_resume_version::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -239,7 +240,7 @@ impl CvResumeVersionService {
     }
 
     /// Find related resume by ID
-    pub fn find_resume_by_id(conn: &mut DbConnection, id: i32) -> Result<Option<CvResume>, AppError> {
+    pub fn find_resume_by_id(conn: &mut DbConnection, id: Uuid) -> Result<Option<CvResume>, AppError> {
         cv_resume::table
             .find(id)
             .select(CvResume::as_select()).first(conn)
@@ -284,7 +285,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -308,7 +309,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = CvResumeVersionService::find_by_id(&mut conn, 99999);
+        let result = CvResumeVersionService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 
@@ -480,9 +481,9 @@ mod tests {
     fn test_find_resume_by_id_returns_none_for_nonexistent() {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
-        // i32::MAX is a valid id type but vanishingly unlikely to exist in
+        // Uuid::new_v4() is a valid id type but vanishingly unlikely to exist in
         // a freshly-migrated test DB.
-        let result = CvResumeVersionService::find_resume_by_id(&mut conn, i32::MAX);
+        let result = CvResumeVersionService::find_resume_by_id(&mut conn, Uuid::new_v4());
         assert!(matches!(result, Ok(None)), "expected Ok(None), got {:?}", result);
     }
 }

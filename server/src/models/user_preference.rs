@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// UserPreference entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::user_preference)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct UserPreference {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub remote_only: Option<bool>,
     pub contract_type: Option<String>,
@@ -63,7 +64,7 @@ mod tests {
     #[test]
     fn test_userPreference_clone() {
         let entity = UserPreference {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             remote_only: None,
             contract_type: None,
@@ -84,7 +85,7 @@ mod tests {
     #[test]
     fn test_userPreference_debug() {
         let entity = UserPreference {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             remote_only: None,
             contract_type: None,
@@ -141,7 +142,7 @@ mod tests {
     #[test]
     fn test_userPreference_serialization() {
         let entity = UserPreference {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             remote_only: None,
             contract_type: None,
@@ -156,6 +157,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

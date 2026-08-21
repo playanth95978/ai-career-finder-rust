@@ -6,12 +6,13 @@ use crate::dto::common::deserialize_option_naive_datetime;
 use crate::dto::common::deserialize_optional_relationship;
 
 use crate::models::{CvResumeVersion, CvResume};
+use uuid::Uuid;
 
 /// Minimal DTO for CvResume relationship in CvResumeVersion responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CvResumeVersionCvResumeRelationDto {
-    pub id: i32,
+    pub id: Uuid,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
 }
@@ -29,7 +30,7 @@ impl From<CvResume> for CvResumeVersionCvResumeRelationDto {
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CvResumeVersionDto {
-    pub id: i32,
+    pub id: Uuid,
     pub version_number: i32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -102,7 +103,7 @@ pub struct CreateCvResumeVersionDto {
     #[serde(default, deserialize_with = "deserialize_option_naive_datetime")]
     pub created_at: Option<NaiveDateTime>,
     #[serde(default, rename = "resume", deserialize_with = "deserialize_optional_relationship")]
-    pub resume_id: Option<i32>,
+    pub resume_id: Option<Uuid>,
 }
 
 impl CreateCvResumeVersionDto {
@@ -119,7 +120,7 @@ pub struct UpdateCvResumeVersionDto {
     #[serde(default, deserialize_with = "deserialize_option_naive_datetime")]
     pub created_at: Option<NaiveDateTime>,
     #[serde(default, rename = "resume", deserialize_with = "deserialize_optional_relationship")]
-    pub resume_id: Option<i32>,
+    pub resume_id: Option<Uuid>,
 }
 
 impl UpdateCvResumeVersionDto {
@@ -136,13 +137,13 @@ mod tests {
 
         fn create_test_entity() -> CvResumeVersion {
             CvResumeVersion {
-                id: 1,
+                id: Uuid::nil(),
                 version_number: 42,
                 title: Some("test_value".to_string()),
                 template: Some("test_value".to_string()),
                 data: "test_value".to_string(),
                 created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-                resume_id: Some(1),
+                resume_id: Some(Uuid::nil()),
                 created_by: Some("system".to_string()),
                 created_date: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
                 last_modified_by: Some("admin".to_string()),
@@ -154,7 +155,7 @@ mod tests {
         fn test_cvResumeVersion_dto_from_entity() {
             let entity = create_test_entity();
             let dto = CvResumeVersionDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -164,14 +165,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = CvResumeVersionDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_cvResumeVersion_dto_deserialization() {
-            let json = r#"{"id":1,"versionNumber":1,"data":"test"}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","versionNumber":1,"data":"test"}"#;
             let dto: CvResumeVersionDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

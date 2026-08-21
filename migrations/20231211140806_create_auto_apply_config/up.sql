@@ -1,6 +1,6 @@
 -- Create auto_apply_config table
 CREATE TABLE auto_apply_config (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL UNIQUE,
     mode VARCHAR(255),
     min_score DOUBLE PRECISION,

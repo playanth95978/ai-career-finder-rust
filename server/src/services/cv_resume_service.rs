@@ -6,6 +6,7 @@ use crate::db::schema::cv_resume;
 use crate::dto::{CreateCvResumeDto, PageRequest, UpdateCvResumeDto};
 use crate::errors::AppError;
 use crate::models::{NewCvResume, UpdateCvResume, CvResume};
+use uuid::Uuid;
 
 pub struct CvResumeService;
 
@@ -189,7 +190,7 @@ impl CvResumeService {
     }
 
     /// Find cvResume by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<CvResume, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<CvResume, AppError> {
         cv_resume::table
             .find(id)
             .select(CvResume::as_select()).first(conn)
@@ -234,7 +235,7 @@ impl CvResumeService {
     /// Update an existing cvResume
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateCvResumeDto,
         modified_by: &str,
     ) -> Result<CvResume, AppError> {
@@ -261,7 +262,7 @@ impl CvResumeService {
     }
 
     /// Delete a cvResume
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(cv_resume::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -307,7 +308,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -331,7 +332,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = CvResumeService::find_by_id(&mut conn, 99999);
+        let result = CvResumeService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

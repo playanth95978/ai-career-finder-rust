@@ -5,12 +5,13 @@ use chrono::NaiveDateTime;
 use crate::dto::common::deserialize_option_naive_datetime;
 
 use crate::models::RadarState;
+use uuid::Uuid;
 
 /// RadarState DTO for API responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct RadarStateDto {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default, deserialize_with = "deserialize_option_naive_datetime")]
@@ -75,7 +76,7 @@ mod tests {
 
         fn create_test_entity() -> RadarState {
             RadarState {
-                id: 1,
+                id: Uuid::nil(),
                 user_id: "test_value".to_string(),
                 last_offer_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
                 created_by: Some("system".to_string()),
@@ -89,7 +90,7 @@ mod tests {
         fn test_radarState_dto_from_entity() {
             let entity = create_test_entity();
             let dto = RadarStateDto::from(entity);
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
             assert_eq!(dto.created_by, Some("system".to_string()));
             assert!(dto.created_date.is_some());
         }
@@ -99,14 +100,14 @@ mod tests {
             let entity = create_test_entity();
             let dto = RadarStateDto::from(entity);
             let json = serde_json::to_string(&dto).unwrap();
-            assert!(json.contains("\"id\":1"));
+            assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
         }
 
         #[test]
         fn test_radarState_dto_deserialization() {
-            let json = r#"{"id":1,"userId":"test"}"#;
+            let json = r#"{"id":"00000000-0000-0000-0000-000000000000","userId":"test"}"#;
             let dto: RadarStateDto = serde_json::from_str(json).unwrap();
-            assert_eq!(dto.id, 1);
+            assert_eq!(dto.id, Uuid::nil());
         }
     }
 

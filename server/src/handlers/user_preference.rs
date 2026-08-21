@@ -12,6 +12,7 @@ use crate::middleware::auth::AuthUser;
 use crate::models::RoleType;
 use crate::services::UserPreferenceService;
 use crate::AppState;
+use uuid::Uuid;
 
 /// UserPreference routes
 pub fn routes() -> Router<AppState> {
@@ -68,7 +69,7 @@ pub async fn get_all(
     tag = "user-preferences",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "UserPreference ID")
+        ("id" = Uuid, Path, description = "UserPreference ID")
     ),
     responses(
         (status = 200, description = "UserPreference found", body = UserPreferenceDto),
@@ -80,7 +81,7 @@ pub async fn get_all(
 pub async fn get_one(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<Json<UserPreferenceDto>, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
         return Err(AppError::Forbidden("Access denied".to_string()));
@@ -129,7 +130,7 @@ pub async fn create(
     tag = "user-preferences",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "UserPreference ID")
+        ("id" = Uuid, Path, description = "UserPreference ID")
     ),
     request_body = UpdateUserPreferenceDto,
     responses(
@@ -143,7 +144,7 @@ pub async fn create(
 pub async fn update(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
     Json(dto): Json<UpdateUserPreferenceDto>,
 ) -> Result<Json<UserPreferenceDto>, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
@@ -164,7 +165,7 @@ pub async fn update(
     tag = "user-preferences",
     security(("bearer_auth" = [])),
     params(
-        ("id" = i32, Path, description = "UserPreference ID")
+        ("id" = Uuid, Path, description = "UserPreference ID")
     ),
     responses(
         (status = 204, description = "UserPreference deleted successfully"),
@@ -176,7 +177,7 @@ pub async fn update(
 pub async fn remove(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
-    Path(id): Path<i32>,
+    Path(id): Path<Uuid>,
 ) -> Result<StatusCode, AppError> {
     if !auth_user.has_authority(RoleType::USER) {
         return Err(AppError::Forbidden("Access denied".to_string()));

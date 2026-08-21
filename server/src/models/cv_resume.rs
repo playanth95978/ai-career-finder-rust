@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// CvResume entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::cv_resume)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct CvResume {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub title: Option<String>,
     pub template: Option<String>,
@@ -60,7 +61,7 @@ mod tests {
     #[test]
     fn test_cvResume_clone() {
         let entity = CvResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             template: None,
@@ -80,7 +81,7 @@ mod tests {
     #[test]
     fn test_cvResume_debug() {
         let entity = CvResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             template: None,
@@ -134,7 +135,7 @@ mod tests {
     #[test]
     fn test_cvResume_serialization() {
         let entity = CvResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             title: None,
             template: None,
@@ -148,6 +149,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

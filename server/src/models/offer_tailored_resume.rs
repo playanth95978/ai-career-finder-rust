@@ -1,18 +1,19 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// OfferTailoredResume entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::offer_tailored_resume)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct OfferTailoredResume {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub data: String,
     pub title: Option<String>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -27,7 +28,7 @@ pub struct NewOfferTailoredResume {
     pub data: String,
     pub title: Option<String>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -42,7 +43,7 @@ pub struct UpdateOfferTailoredResume {
     pub data: Option<String>,
     pub title: Option<String>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<Option<i32>>,
+    pub jobOffer_id: Option<Option<Uuid>>,
     pub last_modified_by: Option<String>,
     pub last_modified_date: Option<NaiveDateTime>,
 }
@@ -54,7 +55,7 @@ mod tests {
     #[test]
     fn test_offerTailoredResume_clone() {
         let entity = OfferTailoredResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             data: "test".to_string(),
             title: None,
@@ -72,7 +73,7 @@ mod tests {
     #[test]
     fn test_offerTailoredResume_debug() {
         let entity = OfferTailoredResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             data: "test".to_string(),
             title: None,
@@ -110,7 +111,7 @@ mod tests {
             data: Some("updated".to_string()),
             title: Some("updated".to_string()),
             created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-            jobOffer_id: Some(Some(1)),
+            jobOffer_id: Some(Some(Uuid::nil())),
             last_modified_by: Some("updater".to_string()),
             last_modified_date: None,
         };
@@ -120,7 +121,7 @@ mod tests {
     #[test]
     fn test_offerTailoredResume_serialization() {
         let entity = OfferTailoredResume {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             data: "test".to_string(),
             title: None,
@@ -132,6 +133,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

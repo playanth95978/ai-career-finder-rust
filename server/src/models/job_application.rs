@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// JobApplication entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::job_application)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct JobApplication {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub status: Option<String>,
     pub cover_letter: Option<String>,
@@ -16,8 +17,8 @@ pub struct JobApplication {
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
     pub applied_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
-    pub candidateProfile_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
+    pub candidateProfile_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -36,8 +37,8 @@ pub struct NewJobApplication {
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
     pub applied_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
-    pub candidateProfile_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
+    pub candidateProfile_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -56,8 +57,8 @@ pub struct UpdateJobApplication {
     pub created_at: Option<NaiveDateTime>,
     pub updated_at: Option<NaiveDateTime>,
     pub applied_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<Option<i32>>,
-    pub candidateProfile_id: Option<Option<i32>>,
+    pub jobOffer_id: Option<Option<Uuid>>,
+    pub candidateProfile_id: Option<Option<Uuid>>,
     pub last_modified_by: Option<String>,
     pub last_modified_date: Option<NaiveDateTime>,
 }
@@ -69,7 +70,7 @@ mod tests {
     #[test]
     fn test_jobApplication_clone() {
         let entity = JobApplication {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             status: None,
             cover_letter: None,
@@ -92,7 +93,7 @@ mod tests {
     #[test]
     fn test_jobApplication_debug() {
         let entity = JobApplication {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             status: None,
             cover_letter: None,
@@ -144,8 +145,8 @@ mod tests {
             created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
             updated_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
             applied_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-            jobOffer_id: Some(Some(1)),
-            candidateProfile_id: Some(Some(1)),
+            jobOffer_id: Some(Some(Uuid::nil())),
+            candidateProfile_id: Some(Some(Uuid::nil())),
             last_modified_by: Some("updater".to_string()),
             last_modified_date: None,
         };
@@ -155,7 +156,7 @@ mod tests {
     #[test]
     fn test_jobApplication_serialization() {
         let entity = JobApplication {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             status: None,
             cover_letter: None,
@@ -172,6 +173,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

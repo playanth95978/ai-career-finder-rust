@@ -1,20 +1,21 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// RadarHit entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::radar_hit)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct RadarHit {
-    pub id: i32,
+    pub id: Uuid,
     pub user_id: String,
     pub score: Option<f64>,
     pub why_you: Option<String>,
     pub seen: Option<bool>,
     pub dismissed: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -31,7 +32,7 @@ pub struct NewRadarHit {
     pub seen: Option<bool>,
     pub dismissed: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<i32>,
+    pub jobOffer_id: Option<Uuid>,
     pub created_by: Option<String>,
     pub created_date: Option<NaiveDateTime>,
     pub last_modified_by: Option<String>,
@@ -48,7 +49,7 @@ pub struct UpdateRadarHit {
     pub seen: Option<bool>,
     pub dismissed: Option<bool>,
     pub created_at: Option<NaiveDateTime>,
-    pub jobOffer_id: Option<Option<i32>>,
+    pub jobOffer_id: Option<Option<Uuid>>,
     pub last_modified_by: Option<String>,
     pub last_modified_date: Option<NaiveDateTime>,
 }
@@ -60,7 +61,7 @@ mod tests {
     #[test]
     fn test_radarHit_clone() {
         let entity = RadarHit {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             score: None,
             why_you: None,
@@ -80,7 +81,7 @@ mod tests {
     #[test]
     fn test_radarHit_debug() {
         let entity = RadarHit {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             score: None,
             why_you: None,
@@ -124,7 +125,7 @@ mod tests {
             seen: Some(false),
             dismissed: Some(false),
             created_at: Some(NaiveDateTime::parse_from_str("2024-01-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap()),
-            jobOffer_id: Some(Some(1)),
+            jobOffer_id: Some(Some(Uuid::nil())),
             last_modified_by: Some("updater".to_string()),
             last_modified_date: None,
         };
@@ -134,7 +135,7 @@ mod tests {
     #[test]
     fn test_radarHit_serialization() {
         let entity = RadarHit {
-            id: 1,
+            id: Uuid::nil(),
             user_id: "test".to_string(),
             score: None,
             why_you: None,
@@ -148,6 +149,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }

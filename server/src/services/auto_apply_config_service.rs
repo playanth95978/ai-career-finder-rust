@@ -6,6 +6,7 @@ use crate::db::schema::auto_apply_config;
 use crate::dto::{CreateAutoApplyConfigDto, PageRequest, UpdateAutoApplyConfigDto};
 use crate::errors::AppError;
 use crate::models::{NewAutoApplyConfig, UpdateAutoApplyConfig, AutoApplyConfig};
+use uuid::Uuid;
 
 pub struct AutoApplyConfigService;
 
@@ -159,7 +160,7 @@ impl AutoApplyConfigService {
     }
 
     /// Find autoApplyConfig by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<AutoApplyConfig, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<AutoApplyConfig, AppError> {
         auto_apply_config::table
             .find(id)
             .select(AutoApplyConfig::as_select()).first(conn)
@@ -202,7 +203,7 @@ impl AutoApplyConfigService {
     /// Update an existing autoApplyConfig
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateAutoApplyConfigDto,
         modified_by: &str,
     ) -> Result<AutoApplyConfig, AppError> {
@@ -227,7 +228,7 @@ impl AutoApplyConfigService {
     }
 
     /// Delete a autoApplyConfig
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(auto_apply_config::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -271,7 +272,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -295,7 +296,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = AutoApplyConfigService::find_by_id(&mut conn, 99999);
+        let result = AutoApplyConfigService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

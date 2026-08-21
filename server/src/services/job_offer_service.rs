@@ -6,6 +6,7 @@ use crate::db::schema::job_offer;
 use crate::dto::{CreateJobOfferDto, PageRequest, UpdateJobOfferDto};
 use crate::errors::AppError;
 use crate::models::{NewJobOffer, UpdateJobOffer, JobOffer};
+use uuid::Uuid;
 
 pub struct JobOfferService;
 
@@ -564,7 +565,7 @@ impl JobOfferService {
     }
 
     /// Find jobOffer by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<JobOffer, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<JobOffer, AppError> {
         job_offer::table
             .find(id)
             .select(JobOffer::as_select()).first(conn)
@@ -634,7 +635,7 @@ impl JobOfferService {
     /// Update an existing jobOffer
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateJobOfferDto,
         modified_by: &str,
     ) -> Result<JobOffer, AppError> {
@@ -686,7 +687,7 @@ impl JobOfferService {
     }
 
     /// Delete a jobOffer
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(job_offer::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -757,7 +758,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -781,7 +782,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = JobOfferService::find_by_id(&mut conn, 99999);
+        let result = JobOfferService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

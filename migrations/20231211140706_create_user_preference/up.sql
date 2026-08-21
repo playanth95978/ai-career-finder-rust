@@ -1,6 +1,6 @@
 -- Create user_preference table
 CREATE TABLE user_preference (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL UNIQUE,
     remote_only BOOLEAN,
     contract_type VARCHAR(255),

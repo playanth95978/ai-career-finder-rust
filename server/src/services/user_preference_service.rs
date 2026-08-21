@@ -6,6 +6,7 @@ use crate::db::schema::user_preference;
 use crate::dto::{CreateUserPreferenceDto, PageRequest, UpdateUserPreferenceDto};
 use crate::errors::AppError;
 use crate::models::{NewUserPreference, UpdateUserPreference, UserPreference};
+use uuid::Uuid;
 
 pub struct UserPreferenceService;
 
@@ -204,7 +205,7 @@ impl UserPreferenceService {
     }
 
     /// Find userPreference by ID
-    pub fn find_by_id(conn: &mut DbConnection, id: i32) -> Result<UserPreference, AppError> {
+    pub fn find_by_id(conn: &mut DbConnection, id: Uuid) -> Result<UserPreference, AppError> {
         user_preference::table
             .find(id)
             .select(UserPreference::as_select()).first(conn)
@@ -250,7 +251,7 @@ impl UserPreferenceService {
     /// Update an existing userPreference
     pub fn update(
         conn: &mut DbConnection,
-        id: i32,
+        id: Uuid,
         dto: UpdateUserPreferenceDto,
         modified_by: &str,
     ) -> Result<UserPreference, AppError> {
@@ -278,7 +279,7 @@ impl UserPreferenceService {
     }
 
     /// Delete a userPreference
-    pub fn delete(conn: &mut DbConnection, id: i32) -> Result<(), AppError> {
+    pub fn delete(conn: &mut DbConnection, id: Uuid) -> Result<(), AppError> {
         diesel::delete(user_preference::table.find(id))
             .execute(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
@@ -325,7 +326,7 @@ mod tests {
 
         assert!(result.is_ok());
         let entity = result.unwrap();
-        assert!(entity.id > 0);
+        assert!(!entity.id.is_nil());
     }
 
     #[test]
@@ -349,7 +350,7 @@ mod tests {
         let pool = create_test_pool();
         let mut conn = pool.get().unwrap();
 
-        let result = UserPreferenceService::find_by_id(&mut conn, 99999);
+        let result = UserPreferenceService::find_by_id(&mut conn, Uuid::new_v4());
         assert!(result.is_err());
     }
 

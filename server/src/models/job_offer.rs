@@ -1,13 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// JobOffer entity
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::job_offer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct JobOffer {
-    pub id: i32,
+    pub id: Uuid,
     pub title: String,
     pub company: Option<String>,
     pub location: Option<String>,
@@ -135,7 +136,7 @@ mod tests {
     #[test]
     fn test_jobOffer_clone() {
         let entity = JobOffer {
-            id: 1,
+            id: Uuid::nil(),
             title: "test".to_string(),
             company: None,
             location: None,
@@ -180,7 +181,7 @@ mod tests {
     #[test]
     fn test_jobOffer_debug() {
         let entity = JobOffer {
-            id: 1,
+            id: Uuid::nil(),
             title: "test".to_string(),
             company: None,
             location: None,
@@ -309,7 +310,7 @@ mod tests {
     #[test]
     fn test_jobOffer_serialization() {
         let entity = JobOffer {
-            id: 1,
+            id: Uuid::nil(),
             title: "test".to_string(),
             company: None,
             location: None,
@@ -348,6 +349,6 @@ mod tests {
             last_modified_date: None,
         };
         let json = serde_json::to_string(&entity).unwrap();
-        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"id\":\"00000000-0000-0000-0000-000000000000\""));
     }
 }
