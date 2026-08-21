@@ -327,3 +327,11 @@ mod tests {
         }
     }
 }
+
+/// Un appel HTTP sortant qui echoue (connecteur ATS, OCR Mistral, embedding Ollama) est une
+/// defaillance d'un service tiers, pas une erreur du client : on la remonte en interne.
+impl From<reqwest::Error> for AppError {
+    fn from(e: reqwest::Error) -> Self {
+        AppError::Internal(format!("HTTP request failed: {e}"))
+    }
+}

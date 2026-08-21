@@ -18,4 +18,5 @@ pub mod offer_positioning;
 pub mod offer_tailored_resume;
 pub mod ai;
 pub mod mistral_ocr;
+pub mod job_copilot_cv;
 // jhipster-needle-add-entity-handler - JHipster will add entity handlers here

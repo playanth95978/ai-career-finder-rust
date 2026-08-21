@@ -111,6 +111,8 @@ use crate::handlers;
                 handlers::ai::prompt_path,
                 handlers::ai::prompt_json,
                 handlers::mistral_ocr::process,
+                handlers::job_copilot_cv::upload,
+                handlers::job_copilot_cv::profile,
                 // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
     ),
     components(

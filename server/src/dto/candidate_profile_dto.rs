@@ -7,9 +7,31 @@ use crate::dto::common::deserialize_option_naive_datetime;
 use crate::models::CandidateProfile;
 use uuid::Uuid;
 
+/// Les colonnes `skills`, `experiences`, `preferred_roles`, `languages`, `education` et
+/// `certifications` stockent du JSON dans des colonnes TEXT. Le front attend des tableaux, pas des
+/// chaines : on desérialise a la lecture et on re-serialise a l'ecriture.
+///
+/// Une valeur illisible est traitee comme absente plutot que de faire echouer toute la reponse :
+/// un champ JSON corrompu ne doit pas rendre un profil inconsultable.
+pub fn json_from_text(raw: Option<String>) -> Option<serde_json::Value> {
+    raw.filter(|s| !s.trim().is_empty())
+        .and_then(|s| serde_json::from_str(&s).ok())
+}
+
+/// Inverse de [`json_from_text`] : reserialise vers la colonne TEXT.
+pub fn text_from_json(value: Option<&serde_json::Value>) -> Option<String> {
+    value.map(|v| v.to_string())
+}
+
 /// CandidateProfile DTO for API responses
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
+/// Les colonnes `skills`, `experiences`, `preferred_roles`, `languages`, `education` et
+/// `certifications` stockent du JSON dans des colonnes TEXT. Le front attend des tableaux, pas des
+/// chaines : on desérialise a la lecture et on re-serialise a l'ecriture.
+///
+/// Une valeur illisible est traitee comme absente plutot que de faire echouer toute la reponse :
+/// un champ JSON corrompu ne doit pas rendre un profil inconsultable.
 pub struct CandidateProfileDto {
     pub id: Uuid,
     pub user_id: String,
@@ -22,17 +44,17 @@ pub struct CandidateProfileDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub years_of_experience: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub skills: Option<String>,
+    pub skills: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub experiences: Option<String>,
+    pub experiences: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub preferred_roles: Option<String>,
+    pub preferred_roles: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub languages: Option<String>,
+    pub languages: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub education: Option<String>,
+    pub education: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub certifications: Option<String>,
+    pub certifications: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub raw_markdown: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -67,12 +89,12 @@ impl From<CandidateProfile> for CandidateProfileDto {
             email: entity.email,
             location: entity.location,
             years_of_experience: entity.years_of_experience,
-            skills: entity.skills,
-            experiences: entity.experiences,
-            preferred_roles: entity.preferred_roles,
-            languages: entity.languages,
-            education: entity.education,
-            certifications: entity.certifications,
+            skills: json_from_text(entity.skills),
+            experiences: json_from_text(entity.experiences),
+            preferred_roles: json_from_text(entity.preferred_roles),
+            languages: json_from_text(entity.languages),
+            education: json_from_text(entity.education),
+            certifications: json_from_text(entity.certifications),
             raw_markdown: entity.raw_markdown,
             cv_filename: entity.cv_filename,
             embedding_model: entity.embedding_model,
@@ -97,12 +119,12 @@ pub struct CreateCandidateProfileDto {
     pub email: Option<String>,
     pub location: Option<String>,
     pub years_of_experience: Option<i32>,
-    pub skills: Option<String>,
-    pub experiences: Option<String>,
-    pub preferred_roles: Option<String>,
-    pub languages: Option<String>,
-    pub education: Option<String>,
-    pub certifications: Option<String>,
+    pub skills: Option<serde_json::Value>,
+    pub experiences: Option<serde_json::Value>,
+    pub preferred_roles: Option<serde_json::Value>,
+    pub languages: Option<serde_json::Value>,
+    pub education: Option<serde_json::Value>,
+    pub certifications: Option<serde_json::Value>,
     pub raw_markdown: Option<String>,
     pub cv_filename: Option<String>,
     pub embedding_model: Option<String>,
@@ -126,12 +148,12 @@ pub struct UpdateCandidateProfileDto {
     pub email: Option<String>,
     pub location: Option<String>,
     pub years_of_experience: Option<i32>,
-    pub skills: Option<String>,
-    pub experiences: Option<String>,
-    pub preferred_roles: Option<String>,
-    pub languages: Option<String>,
-    pub education: Option<String>,
-    pub certifications: Option<String>,
+    pub skills: Option<serde_json::Value>,
+    pub experiences: Option<serde_json::Value>,
+    pub preferred_roles: Option<serde_json::Value>,
+    pub languages: Option<serde_json::Value>,
+    pub education: Option<serde_json::Value>,
+    pub certifications: Option<serde_json::Value>,
     pub raw_markdown: Option<String>,
     pub cv_filename: Option<String>,
     pub embedding_model: Option<String>,
@@ -163,12 +185,12 @@ mod tests {
                 email: Some("test_value".to_string()),
                 location: Some("test_value".to_string()),
                 years_of_experience: Some(42),
-                skills: Some("test_value".to_string()),
-                experiences: Some("test_value".to_string()),
-                preferred_roles: Some("test_value".to_string()),
-                languages: Some("test_value".to_string()),
-                education: Some("test_value".to_string()),
-                certifications: Some("test_value".to_string()),
+                skills: Some("[]".to_string()),
+                experiences: Some("[]".to_string()),
+                preferred_roles: Some("[]".to_string()),
+                languages: Some("[]".to_string()),
+                education: Some("[]".to_string()),
+                certifications: Some("[]".to_string()),
                 raw_markdown: Some("test_value".to_string()),
                 cv_filename: Some("test_value".to_string()),
                 embedding_model: Some("test_value".to_string()),

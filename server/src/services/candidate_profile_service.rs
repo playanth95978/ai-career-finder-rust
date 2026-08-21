@@ -366,12 +366,12 @@ impl CandidateProfileService {
             email: dto.email,
             location: dto.location,
             years_of_experience: dto.years_of_experience,
-            skills: dto.skills,
-            experiences: dto.experiences,
-            preferred_roles: dto.preferred_roles,
-            languages: dto.languages,
-            education: dto.education,
-            certifications: dto.certifications,
+            skills: crate::dto::text_from_json(dto.skills.as_ref()),
+            experiences: crate::dto::text_from_json(dto.experiences.as_ref()),
+            preferred_roles: crate::dto::text_from_json(dto.preferred_roles.as_ref()),
+            languages: crate::dto::text_from_json(dto.languages.as_ref()),
+            education: crate::dto::text_from_json(dto.education.as_ref()),
+            certifications: crate::dto::text_from_json(dto.certifications.as_ref()),
             raw_markdown: dto.raw_markdown,
             cv_filename: dto.cv_filename,
             embedding_model: dto.embedding_model,
@@ -386,6 +386,9 @@ impl CandidateProfileService {
 
         let entity = diesel::insert_into(candidate_profile::table)
             .values(&new_entity)
+            // RETURNING explicite : la table porte aussi `embedding` (vector(768)), volontairement
+            // absent de la struct pour ne pas charger 768 floats a chaque lecture.
+            .returning(CandidateProfile::as_returning())
             .get_result::<CandidateProfile>(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -407,12 +410,12 @@ impl CandidateProfileService {
             email: dto.email,
             location: dto.location,
             years_of_experience: dto.years_of_experience,
-            skills: dto.skills,
-            experiences: dto.experiences,
-            preferred_roles: dto.preferred_roles,
-            languages: dto.languages,
-            education: dto.education,
-            certifications: dto.certifications,
+            skills: crate::dto::text_from_json(dto.skills.as_ref()),
+            experiences: crate::dto::text_from_json(dto.experiences.as_ref()),
+            preferred_roles: crate::dto::text_from_json(dto.preferred_roles.as_ref()),
+            languages: crate::dto::text_from_json(dto.languages.as_ref()),
+            education: crate::dto::text_from_json(dto.education.as_ref()),
+            certifications: crate::dto::text_from_json(dto.certifications.as_ref()),
             raw_markdown: dto.raw_markdown,
             cv_filename: dto.cv_filename,
             embedding_model: dto.embedding_model,
@@ -580,12 +583,12 @@ mod tests {
             email: Some("updated_value".to_string()),
             location: Some("updated_value".to_string()),
             years_of_experience: Some(999),
-            skills: Some("updated_value".to_string()),
-            experiences: Some("updated_value".to_string()),
-            preferred_roles: Some("updated_value".to_string()),
-            languages: Some("updated_value".to_string()),
-            education: Some("updated_value".to_string()),
-            certifications: Some("updated_value".to_string()),
+            skills: Some(serde_json::json!([])),
+            experiences: Some(serde_json::json!([])),
+            preferred_roles: Some(serde_json::json!([])),
+            languages: Some(serde_json::json!([])),
+            education: Some(serde_json::json!([])),
+            certifications: Some(serde_json::json!([])),
             raw_markdown: Some("updated_value".to_string()),
             cv_filename: Some("updated_value".to_string()),
             embedding_model: Some("updated_value".to_string()),

@@ -148,6 +148,7 @@ fn api_routes(state: AppState) -> Router<AppState> {
         .nest("/offer-positionings", handlers::offer_positioning::routes())
         .nest("/offer-tailored-resumes", handlers::offer_tailored_resume::routes())
         .nest("/mistral-ocr", handlers::mistral_ocr::routes())
+        .nest("/job-copilot/cv", handlers::job_copilot_cv::routes())
         // jhipster-needle-add-entity-route - JHipster will add entity routes here
         .layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
 

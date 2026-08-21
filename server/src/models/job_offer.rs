@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// JobOffer entity
-#[derive(Debug, Clone, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Queryable, Selectable, Identifiable, Serialize, Deserialize)]
 #[diesel(table_name = crate::db::schema::job_offer)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct JobOffer {

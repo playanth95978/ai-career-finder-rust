@@ -39,7 +39,12 @@ pub mod embedding_service;
 pub use embedding_service::*;
 pub mod cv_extraction_service;
 pub use cv_extraction_service::*;
+pub mod cv_ingestion_service;
+pub use cv_ingestion_service::*;
 pub mod mistral_ocr_service;
+pub mod connectors;
+pub use connectors::*;
+
 pub use mistral_ocr_service::*;
 
 // jhipster-needle-add-entity-service - JHipster will add entity services here

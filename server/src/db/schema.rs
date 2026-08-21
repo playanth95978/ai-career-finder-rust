@@ -83,6 +83,9 @@ diesel::table! {
     }
 }
 diesel::table! {
+    use diesel::sql_types::*;
+    use pgvector::sql_types::*;
+
     candidate_profile (id) {
         id -> Uuid,
         user_id -> Varchar,
@@ -106,6 +109,7 @@ diesel::table! {
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
         last_modified_date -> Nullable<Timestamp>,
+        embedding -> Nullable<Vector>,
     }
 }
 diesel::table! {
