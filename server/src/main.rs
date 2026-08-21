@@ -153,6 +153,7 @@ fn api_routes(state: AppState) -> Router<AppState> {
     // Public routes (no authentication required)
     let public_routes = Router::new()
         .nest("/health", handlers::health::routes())
+        .nest("/ai", handlers::ai::routes())
         // Registration routes (public for JWT authentication)
         .merge(handlers::account::public_routes())
         .nest("/authenticate", handlers::account::auth_routes());

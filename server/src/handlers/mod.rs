@@ -16,4 +16,5 @@ pub mod cv_resume;
 pub mod cv_resume_version;
 pub mod offer_positioning;
 pub mod offer_tailored_resume;
+pub mod ai;
 // jhipster-needle-add-entity-handler - JHipster will add entity handlers here

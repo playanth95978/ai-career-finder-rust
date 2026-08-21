@@ -106,7 +106,11 @@ use crate::handlers;
                 handlers::offer_tailored_resume::create,
                 handlers::offer_tailored_resume::update,
                 handlers::offer_tailored_resume::remove,
-        // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
+                // AI endpoints
+                handlers::ai::prompt_query,
+                handlers::ai::prompt_path,
+                handlers::ai::prompt_json,
+                // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
     ),
     components(
         schemas(
@@ -163,6 +167,9 @@ use crate::handlers;
             OfferTailoredResumeDto,
                         CreateOfferTailoredResumeDto,
                         UpdateOfferTailoredResumeDto,
+            handlers::ai::AiPromptResponse,
+            handlers::ai::PromptRequest,
+            handlers::ai::PromptQuery,
             // jhipster-needle-add-openapi-schema - JHipster will add OpenAPI schemas here
         )
     ),
@@ -185,6 +192,7 @@ use crate::handlers;
         (name = "cv-resume-versions", description = "CvResumeVersion management endpoints"),
         (name = "offer-positionings", description = "OfferPositioning management endpoints"),
         (name = "offer-tailored-resumes", description = "OfferTailoredResume management endpoints"),
+        (name = "ai", description = "AI and LLM prompt endpoints"),
         // jhipster-needle-add-openapi-tag - JHipster will add OpenAPI tags here
     )
 )]

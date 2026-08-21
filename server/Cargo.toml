@@ -11,7 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 axum.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 diesel.workspace = true
 diesel_migrations.workspace = true
 dotenvy.workspace = true
@@ -34,6 +34,7 @@ lazy_static.workspace = true
 regex.workspace = true
 utoipa.workspace = true
 utoipa-scalar.workspace = true
+rig = { version = "0.42.0", features = ["derive"] }
 
 [dev-dependencies]
 axum-test = "14"

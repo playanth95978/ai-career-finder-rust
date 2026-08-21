@@ -33,4 +33,6 @@ pub mod offer_positioning_service;
 pub use offer_positioning_service::*;
 pub mod offer_tailored_resume_service;
 pub use offer_tailored_resume_service::*;
+pub mod ai_service;
+pub use ai_service::*;
 // jhipster-needle-add-entity-service - JHipster will add entity services here
