@@ -24,7 +24,7 @@ pub struct PromptQuery {
     pub prompt: Option<String>,
     /// Short alias for prompt
     pub q: Option<String>,
-    /// Model name (defaults to "gpt-5.5")
+    /// Model name (defaults to the configured Mistral model)
     pub model: Option<String>,
     /// System prompt / preamble (defaults to "You are a helpful assistant.")
     pub preamble: Option<String>,
@@ -35,7 +35,7 @@ pub struct PromptQuery {
 pub struct PromptRequest {
     /// Prompt text to send to the AI agent
     pub prompt: String,
-    /// Model name (defaults to "gpt-5.5")
+    /// Model name (defaults to the configured Mistral model)
     pub model: Option<String>,
     /// System prompt / preamble (defaults to "You are a helpful assistant.")
     pub preamble: Option<String>,
@@ -58,7 +58,7 @@ pub struct AiPromptResponse {
     params(
         ("prompt" = Option<String>, Query, description = "Prompt text to send to the AI agent"),
         ("q" = Option<String>, Query, description = "Alternative query parameter for prompt text"),
-        ("model" = Option<String>, Query, description = "Model name (defaults to gpt-5.5)"),
+        ("model" = Option<String>, Query, description = "Model name (defaults to the configured Mistral model)"),
         ("preamble" = Option<String>, Query, description = "System prompt / preamble")
     ),
     responses(
@@ -76,8 +76,9 @@ pub async fn prompt_query(
         .filter(|s| !s.trim().is_empty())
         .ok_or_else(|| AppError::BadRequest("Missing required 'prompt' or 'q' URL parameter".to_string()))?;
 
-    let model = query.model.as_deref().unwrap_or("gpt-5.5");
-    let preamble = query.preamble.as_deref().unwrap_or("You are a helpful assistant.");
+    let default_model = AiService::default_model();
+    let model = query.model.as_deref().unwrap_or(&default_model);
+    let preamble = query.preamble.as_deref().unwrap_or(crate::services::ai_service::DEFAULT_PREAMBLE);
 
     let response = AiService::prompt_with_model(&prompt_text, model, preamble).await?;
 
@@ -137,8 +138,9 @@ pub async fn prompt_json(
         return Err(AppError::BadRequest("Prompt field cannot be empty".to_string()));
     }
 
-    let model = payload.model.as_deref().unwrap_or("gpt-5.5");
-    let preamble = payload.preamble.as_deref().unwrap_or("You are a helpful assistant.");
+    let default_model = AiService::default_model();
+    let model = payload.model.as_deref().unwrap_or(&default_model);
+    let preamble = payload.preamble.as_deref().unwrap_or(crate::services::ai_service::DEFAULT_PREAMBLE);
 
     let response = AiService::prompt_with_model(&prompt_text, model, preamble).await?;
 
@@ -176,18 +178,18 @@ mod tests {
 
     #[test]
     fn test_prompt_query_deserialization() {
-        let query: PromptQuery = serde_json::from_str(r#"{"prompt":"Hello","model":"gpt-5.5"}"#).unwrap();
+        let query: PromptQuery = serde_json::from_str(r#"{"prompt":"Hello","model":"mistral-small-latest"}"#).unwrap();
         assert_eq!(query.prompt.as_deref(), Some("Hello"));
-        assert_eq!(query.model.as_deref(), Some("gpt-5.5"));
+        assert_eq!(query.model.as_deref(), Some("mistral-small-latest"));
         assert!(query.q.is_none());
         assert!(query.preamble.is_none());
     }
 
     #[test]
     fn test_prompt_request_deserialization() {
-        let req: PromptRequest = serde_json::from_str(r#"{"prompt":"What is Rust?","model":"gpt-5.5","preamble":"You are helpful"}"#).unwrap();
+        let req: PromptRequest = serde_json::from_str(r#"{"prompt":"What is Rust?","model":"mistral-small-latest","preamble":"You are helpful"}"#).unwrap();
         assert_eq!(req.prompt, "What is Rust?");
-        assert_eq!(req.model.as_deref(), Some("gpt-5.5"));
+        assert_eq!(req.model.as_deref(), Some("mistral-small-latest"));
         assert_eq!(req.preamble.as_deref(), Some("You are helpful"));
     }
 

@@ -9,7 +9,7 @@ authors = ["JHipster"]
 license = "Apache-2.0"
 
 [workspace.dependencies]
-axum = "0.7"
+axum = { version = "0.7", features = ["multipart"] }
 tokio = { version = "1", features = ["full"] }
 diesel = { version = "=2.1.6", features = ["postgres", "r2d2", "chrono", "uuid", "64-column-tables"] }
 diesel_migrations = "=2.1.0"

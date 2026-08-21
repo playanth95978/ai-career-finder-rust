@@ -110,6 +110,7 @@ use crate::handlers;
                 handlers::ai::prompt_query,
                 handlers::ai::prompt_path,
                 handlers::ai::prompt_json,
+                handlers::mistral_ocr::process,
                 // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
     ),
     components(
@@ -168,6 +169,7 @@ use crate::handlers;
                         CreateOfferTailoredResumeDto,
                         UpdateOfferTailoredResumeDto,
             handlers::ai::AiPromptResponse,
+            handlers::mistral_ocr::OcrProcessResponse,
             handlers::ai::PromptRequest,
             handlers::ai::PromptQuery,
             // jhipster-needle-add-openapi-schema - JHipster will add OpenAPI schemas here
