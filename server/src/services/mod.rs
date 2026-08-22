@@ -42,6 +42,14 @@ pub use cv_extraction_service::*;
 pub mod cv_ingestion_service;
 pub use cv_ingestion_service::*;
 pub mod mistral_ocr_service;
+pub mod cover_letter_service;
+pub use cover_letter_service::*;
+pub mod cv_builder_service;
+pub use cv_builder_service::*;
+pub mod job_matching_service;
+pub use job_matching_service::*;
+pub mod job_search_service;
+pub use job_search_service::*;
 pub mod connectors;
 pub use connectors::*;
 

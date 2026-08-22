@@ -17,6 +17,7 @@ diesel::table! {
         last_name -> Nullable<Varchar>,
         email -> Varchar,
         activated -> Bool,
+        onboarding_completed -> Bool,
         lang_key -> Nullable<Varchar>,
         image_url -> Nullable<Varchar>,
         created_by -> Nullable<Varchar>,
@@ -123,7 +124,12 @@ diesel::table! {
         created_at -> Nullable<Timestamp>,
         updated_at -> Nullable<Timestamp>,
         applied_at -> Nullable<Timestamp>,
+        // La migration a cree ces colonnes en DDL non quote : Postgres les a repliees en
+        // minuscules (`joboffer_id`). Diesel, lui, quote les identifiants, donc sans `sql_name`
+        // il emet `"jobOffer_id"` et Postgres repond « column does not exist ».
+        #[sql_name = "joboffer_id"]
         jobOffer_id -> Nullable<Uuid>,
+        #[sql_name = "candidateprofile_id"]
         candidateProfile_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
@@ -171,6 +177,10 @@ diesel::table! {
         seen -> Nullable<Bool>,
         dismissed -> Nullable<Bool>,
         created_at -> Nullable<Timestamp>,
+        // La migration a cree ces colonnes en DDL non quote : Postgres les a repliees en
+        // minuscules (`joboffer_id`). Diesel, lui, quote les identifiants, donc sans `sql_name`
+        // il emet `"jobOffer_id"` et Postgres repond « column does not exist ».
+        #[sql_name = "joboffer_id"]
         jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
@@ -242,6 +252,10 @@ diesel::table! {
         user_id -> Varchar,
         result -> Varchar,
         created_at -> Nullable<Timestamp>,
+        // La migration a cree ces colonnes en DDL non quote : Postgres les a repliees en
+        // minuscules (`joboffer_id`). Diesel, lui, quote les identifiants, donc sans `sql_name`
+        // il emet `"jobOffer_id"` et Postgres repond « column does not exist ».
+        #[sql_name = "joboffer_id"]
         jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,
@@ -256,6 +270,10 @@ diesel::table! {
         data -> Varchar,
         title -> Nullable<Varchar>,
         created_at -> Nullable<Timestamp>,
+        // La migration a cree ces colonnes en DDL non quote : Postgres les a repliees en
+        // minuscules (`joboffer_id`). Diesel, lui, quote les identifiants, donc sans `sql_name`
+        // il emet `"jobOffer_id"` et Postgres repond « column does not exist ».
+        #[sql_name = "joboffer_id"]
         jobOffer_id -> Nullable<Uuid>,
         created_by -> Nullable<Varchar>,
         created_date -> Nullable<Timestamp>,

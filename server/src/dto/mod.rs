@@ -6,6 +6,8 @@ pub use user_dto::*;
 pub use pagination::*;
 pub use common::*;
 
+pub mod job_copilot_dto;
+pub use job_copilot_dto::*;
 pub mod job_offer_dto;
 pub use job_offer_dto::*;
 pub mod candidate_profile_dto;

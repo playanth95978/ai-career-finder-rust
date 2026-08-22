@@ -15,6 +15,12 @@ pub struct UserDto {
     pub last_name: Option<String>,
     pub email: String,
     pub activated: bool,
+    /// Le garde d'onboarding du front en depend : tant qu'il est faux, le wizard se rouvre.
+    ///
+    /// `default` a la deserialisation : le drapeau est decide par le serveur, un client qui
+    /// renvoie un `UserDto` sans ce champ ne doit pas se faire rejeter.
+    #[serde(default)]
+    pub onboarding_completed: bool,
     pub lang_key: Option<String>,
     pub image_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,6 +40,7 @@ impl From<User> for UserDto {
             last_name: user.last_name,
             email: user.email,
             activated: user.activated,
+            onboarding_completed: user.onboarding_completed,
             lang_key: user.lang_key,
             image_url: user.image_url,
             authorities: None,
@@ -125,6 +132,7 @@ mod tests {
                 last_name: Some("User".to_string()),
                 email: "test@example.com".to_string(),
                 activated: true,
+                onboarding_completed: false,
                 lang_key: Some("en".to_string()),
                 image_url: Some("https://example.com/avatar.png".to_string()),
                 created_by: Some("system".to_string()),
@@ -163,6 +171,7 @@ mod tests {
                 last_name: None,
                 email: "user2@example.com".to_string(),
                 activated: false,
+                onboarding_completed: false,
                 lang_key: None,
                 image_url: None,
                 created_by: None,
@@ -186,6 +195,7 @@ mod tests {
                 last_name: Some("User".to_string()),
                 email: "test@example.com".to_string(),
                 activated: true,
+                onboarding_completed: false,
                 lang_key: Some("en".to_string()),
                 image_url: None,
                 authorities: Some(vec!["ROLE_USER".to_string()]),
@@ -219,6 +229,7 @@ mod tests {
                 last_name: None,
                 email: "test@example.com".to_string(),
                 activated: true,
+                onboarding_completed: false,
                 lang_key: None,
                 image_url: None,
                 authorities: None,

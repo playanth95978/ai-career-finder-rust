@@ -18,6 +18,7 @@ use crate::AppState;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", get(get_account).post(save_account))
+        .route("/onboarding-complete", post(complete_onboarding))
         .route("/change-password", post(change_password))
 }
 
@@ -224,6 +225,31 @@ pub async fn save_account(
         request.lang_key,
         request.image_url,
     )?;
+
+    Ok(StatusCode::OK)
+}
+
+/// Marque l'onboarding de premiere connexion de l'utilisateur courant comme termine.
+#[utoipa::path(
+    post,
+    path = "/api/account/onboarding-complete",
+    tag = "account",
+    security(("bearer_auth" = [])),
+    responses(
+        (status = 200, description = "Onboarding marque comme termine"),
+        (status = 401, description = "Unauthorized")
+    )
+)]
+pub async fn complete_onboarding(
+    State(state): State<AppState>,
+    Extension(auth_user): Extension<AuthUser>,
+) -> Result<StatusCode, AppError> {
+    if auth_user.is_anonymous() {
+        return Err(AppError::Unauthorized("Not authenticated".to_string()));
+    }
+
+    let mut conn = state.pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+    UserService::complete_onboarding(&mut conn, &auth_user.login)?;
 
     Ok(StatusCode::OK)
 }

@@ -265,6 +265,7 @@ impl UserService {
             last_name: dto.last_name,
             email: dto.email,
             activated: dto.activated.unwrap_or(false),
+            onboarding_completed: false,
             lang_key: dto.lang_key,
             image_url: dto.image_url,
             created_by: Some(created_by.to_string()),
@@ -313,6 +314,7 @@ impl UserService {
             last_name: dto.last_name,
             email: dto.email,
             activated: dto.activated,
+            onboarding_completed: None,
             lang_key: dto.lang_key,
             image_url: dto.image_url,
             last_modified_by: Some(modified_by.to_string()),
@@ -468,6 +470,28 @@ impl UserService {
         Ok(())
     }
 
+    /// Marque l'onboarding de premiere connexion comme termine.
+    ///
+    /// Le garde du front relit `GET /api/account` juste apres : si le drapeau n'etait pas persiste,
+    /// il renverrait l'utilisateur au wizard en boucle.
+    pub fn complete_onboarding(conn: &mut DbConnection, login: &str) -> Result<(), AppError> {
+        let now = Utc::now().naive_utc();
+
+        let updated = diesel::update(users::table.filter(users::login.eq(login)))
+            .set((
+                users::onboarding_completed.eq(true),
+                users::last_modified_by.eq(login),
+                users::last_modified_date.eq(now),
+            ))
+            .execute(conn)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+
+        if updated == 0 {
+            return Err(AppError::NotFound(format!("User {login} not found")));
+        }
+        Ok(())
+    }
+
     /// Create a user with authorities (used for testing and seeding)
     pub fn create_with_authorities(
         conn: &mut DbConnection,
@@ -536,6 +560,7 @@ impl UserService {
             last_name: None,
             email: email.to_lowercase(),
             activated: true,  // Already activated since email is disabled
+            onboarding_completed: false,
             lang_key,
             image_url: None,
             created_by: Some("anonymousUser".to_string()),
@@ -1258,6 +1283,7 @@ mod tests {
                 last_name: Some("Create".to_string()),
                 email: "directcreate@example.com".to_string(),
                 activated: true,
+                onboarding_completed: false,
                 lang_key: Some("en".to_string()),
                 image_url: None,
                 created_by: Some("test".to_string()),

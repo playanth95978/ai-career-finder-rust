@@ -9,10 +9,12 @@ use axum::{
 use diesel::prelude::*;
 
 use crate::db::schema::candidate_profile;
+use crate::dto::candidate_profile_dto::text_from_json;
 use crate::dto::CandidateProfileDto;
 use crate::errors::AppError;
 use crate::middleware::auth::AuthUser;
 use crate::models::{CandidateProfile, RoleType};
+use chrono::Utc;
 use crate::services::cv_ingestion_service::CvIngestionService;
 use crate::AppState;
 
@@ -22,7 +24,7 @@ const MAX_UPLOAD_BYTES: usize = 50 * 1024 * 1024;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/upload", post(upload))
-        .route("/profile", get(profile))
+        .route("/profile", get(profile).put(update_profile))
 }
 
 /// Ingere un CV (PDF ou DOCX) et renvoie le profil candidat extrait.
@@ -123,4 +125,66 @@ pub async fn profile(
     found
         .map(|p| Json(CandidateProfileDto::from(p)))
         .ok_or_else(|| AppError::NotFound("No CV profile for this user".into()))
+}
+
+/// Enregistre les corrections apportees par l'utilisateur au profil extrait.
+///
+/// L'extraction par le modele se trompe (identite, intitules, dates) : sans ce chemin, la seule
+/// facon de corriger serait de reimporter le CV, ce qui ecraserait aussi les corrections
+/// precedentes. `rawMarkdown` et `cvFilename` ne sont pas modifiables : ils tracent le document
+/// source, pas ce que l'utilisateur en a fait.
+#[utoipa::path(
+    put,
+    path = "/api/job-copilot/cv/profile",
+    tag = "job-copilot-cv",
+    security(("bearer_auth" = [])),
+    request_body = CandidateProfileDto,
+    responses(
+        (status = 200, description = "Profil enregistre", body = CandidateProfileDto),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Aucun profil : importer un CV d'abord")
+    )
+)]
+pub async fn update_profile(
+    State(state): State<AppState>,
+    Extension(auth): Extension<AuthUser>,
+    Json(dto): Json<CandidateProfileDto>,
+) -> Result<Json<CandidateProfileDto>, AppError> {
+    if !auth.has_authority(RoleType::USER) {
+        return Err(AppError::Forbidden("Access denied".to_string()));
+    }
+
+    let mut conn = state.pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+
+    // On repart de l'existant et non de l'identifiant du corps : autrement, un `id` fabrique
+    // permettrait de modifier le profil d'un autre utilisateur.
+    let existing: CandidateProfile = candidate_profile::table
+        .filter(candidate_profile::user_id.eq(&auth.login))
+        .order(candidate_profile::created_at.desc())
+        .select(CandidateProfile::as_select())
+        .first(&mut conn)
+        .optional()?
+        .ok_or_else(|| AppError::NotFound("No CV profile for this user".into()))?;
+
+    let now = Utc::now().naive_utc();
+    let updated = diesel::update(candidate_profile::table.find(existing.id))
+        .set((
+            candidate_profile::full_name.eq(dto.full_name),
+            candidate_profile::email.eq(dto.email),
+            candidate_profile::location.eq(dto.location),
+            candidate_profile::years_of_experience.eq(dto.years_of_experience),
+            candidate_profile::skills.eq(text_from_json(dto.skills.as_ref())),
+            candidate_profile::experiences.eq(text_from_json(dto.experiences.as_ref())),
+            candidate_profile::preferred_roles.eq(text_from_json(dto.preferred_roles.as_ref())),
+            candidate_profile::languages.eq(text_from_json(dto.languages.as_ref())),
+            candidate_profile::education.eq(text_from_json(dto.education.as_ref())),
+            candidate_profile::certifications.eq(text_from_json(dto.certifications.as_ref())),
+            candidate_profile::updated_at.eq(now),
+            candidate_profile::last_modified_by.eq(auth.login.clone()),
+            candidate_profile::last_modified_date.eq(now),
+        ))
+        .returning(CandidateProfile::as_returning())
+        .get_result(&mut conn)?;
+
+    Ok(Json(CandidateProfileDto::from(updated)))
 }
