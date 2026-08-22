@@ -38,6 +38,8 @@ rig = { version = "0.42.0", features = ["derive"] }
 # Appels REST vers l'API OCR Mistral (rustls : aucune dépendance C supplémentaire).
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 base64 = "0.22"
+# Combinateurs de flux pour le streaming SSE de l'assistant (rig expose des `Stream`).
+futures = "0.3"
 # Type vector(768) de pgvector, mappe pour Diesel.
 pgvector = { version = "0.4", features = ["diesel"] }
 

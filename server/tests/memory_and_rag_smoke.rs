@@ -10,8 +10,8 @@
 //! ```
 //!
 //! Ce qu'ils prouvent, et qu'aucun test unitaire ne peut prouver : que rig ecrit bien dans notre
-//! backend Postgres, qu'il relit l'historique au tour suivant, et que l'index vectoriel est
-//! effectivement interroge quand il est branche en `dynamic_context`.
+//! backend Postgres, qu'il relit l'historique au tour suivant, et que les outils de l'agent
+//! interrogent reellement l'index vectoriel.
 
 use diesel::prelude::*;
 use rig::client::{AgentClientExt, ProviderClient};
@@ -23,7 +23,11 @@ use job_search_rust::config::AppConfig;
 use job_search_rust::db::connection::establish_connection_pool;
 use job_search_rust::db::schema::chat_message;
 use job_search_rust::services::conversation_memory::PostgresConversationMemory;
+use job_search_rust::services::job_agent_tools::{
+    AgentToolContext, GenerateCoverLetterTool, SearchJobOffersTool,
+};
 use job_search_rust::services::job_offer_vector_index::JobOfferVectorIndex;
+use rig::tool::Tool;
 
 /// Identifiant de conversation propre a chaque execution, pour que deux lancements successifs ne
 /// se marchent pas dessus.
@@ -216,4 +220,91 @@ async fn agent_remembers_across_turns_through_postgres_memory() {
     );
 
     cleanup(&pool, &conversation);
+}
+
+// ---------------------------------------------------------------------------
+// Outils de l'agent
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+#[ignore = "necessite Postgres + Ollama"]
+async fn search_tool_returns_real_corpus_offers() {
+    let pool = pool();
+    let index = JobOfferVectorIndex::new(pool.clone());
+    let tool = SearchJobOffersTool(AgentToolContext::new(pool, "test-user", index));
+
+    let mut context = rig::tool::ToolContext::default();
+    let output = tool
+        .call(
+            &mut context,
+            serde_json::from_value(serde_json::json!({ "query": "developpeur full stack" }))
+                .unwrap(),
+        )
+        .await
+        .expect("appel de l'outil");
+
+    let count = output["count"].as_u64().expect("un compteur");
+    assert!(
+        count > 0,
+        "corpus vide ou non vectorise : lancer une recherche puis laisser passer le poller"
+    );
+
+    let offers = output["offers"].as_array().expect("un tableau d'offres");
+    // L'identifiant est ce que le modele reutilise pour les autres outils : sans lui, il ne peut
+    // ni demander de lettre ni renvoyer un lien exploitable.
+    for offer in offers {
+        assert!(offer["id"].is_string(), "chaque offre porte son identifiant");
+        assert!(offer["title"].is_string());
+    }
+}
+
+#[tokio::test]
+#[ignore = "necessite Postgres"]
+async fn search_tool_caps_the_number_of_offers_it_returns() {
+    let pool = pool();
+    let index = JobOfferVectorIndex::new(pool.clone());
+    let tool = SearchJobOffersTool(AgentToolContext::new(pool, "test-user", index));
+
+    let mut context = rig::tool::ToolContext::default();
+    // Le modele peut demander n'importe quoi : la borne doit tenir cote serveur, sinon un
+    // `limit` fantaisiste ferait exploser le contexte.
+    let output = tool
+        .call(
+            &mut context,
+            serde_json::from_value(
+                serde_json::json!({ "query": "developpeur", "limit": 9999 }),
+            )
+            .unwrap(),
+        )
+        .await
+        .expect("appel de l'outil");
+
+    assert!(
+        output["count"].as_u64().unwrap() <= 10,
+        "le plafond d'offres n'est pas applique"
+    );
+}
+
+#[tokio::test]
+#[ignore = "necessite Postgres"]
+async fn cover_letter_tool_rejects_a_fabricated_offer_id() {
+    let pool = pool();
+    let index = JobOfferVectorIndex::new(pool.clone());
+    let tool = GenerateCoverLetterTool(AgentToolContext::new(pool, "test-user", index));
+
+    let mut context = rig::tool::ToolContext::default();
+    let error = tool
+        .call(
+            &mut context,
+            serde_json::from_value(serde_json::json!({ "jobOfferId": "offre-42" })).unwrap(),
+        )
+        .await
+        .expect_err("un identifiant invente doit etre refuse");
+
+    // Le message doit etre exploitable PAR LE MODELE : il faut qu'il sache quoi faire ensuite.
+    let message = error.to_string();
+    assert!(
+        message.contains("search_job_offers"),
+        "le message doit renvoyer vers l'outil de recherche, obtenu : {message}"
+    );
 }

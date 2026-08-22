@@ -150,6 +150,9 @@ use crate::handlers;
                 // Historique de conversation
                 handlers::chat_history::get_history,
                 handlers::chat_history::get_conversation_history,
+                // Assistant conversationnel
+                handlers::job_copilot_assistant::message,
+                handlers::job_copilot_assistant::stream,
                 // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
     ),
     components(
@@ -221,6 +224,7 @@ use crate::handlers;
             SaveResumeDto,
             ResumeVersionDto,
             handlers::chat_history::ChatHistoryDto,
+            handlers::job_copilot_assistant::AssistantMessageDto,
             handlers::ai::AiPromptResponse,
             handlers::mistral_ocr::OcrProcessResponse,
             handlers::ai::PromptRequest,
