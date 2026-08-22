@@ -24,4 +24,5 @@ pub mod job_copilot_radar;
 pub mod job_copilot_search;
 pub mod job_copilot_application;
 pub mod cv_builder;
+pub mod chat_history;
 // jhipster-needle-add-entity-handler - JHipster will add entity handlers here

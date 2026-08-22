@@ -624,8 +624,12 @@ impl JobOfferService {
             last_modified_date: Some(now),
         };
 
+        // `returning` explicite : la table porte une colonne `embedding` que le modele
+        // `JobOffer` n'expose pas (768 flottants inutiles ici), donc un RETURNING * implicite ne
+        // correspondrait plus a la forme attendue.
         let entity = diesel::insert_into(job_offer::table)
             .values(&new_entity)
+            .returning(JobOffer::as_returning())
             .get_result::<JobOffer>(conn)
             .map_err(|e| AppError::Internal(e.to_string()))?;
 

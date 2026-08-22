@@ -43,6 +43,9 @@ diesel::joinable!(user_authorities -> authorities (authority_name));
 // injections every handler/service `use crate::db::schema::<entity>` fails
 // with E0432/E0433.
 diesel::table! {
+    use diesel::sql_types::*;
+    use pgvector::sql_types::*;
+
     job_offer (id) {
         id -> Uuid,
         title -> Varchar,
@@ -81,6 +84,10 @@ diesel::table! {
         created_date -> Nullable<Timestamp>,
         last_modified_by -> Nullable<Varchar>,
         last_modified_date -> Nullable<Timestamp>,
+        // Absent du modele `JobOffer` a dessein : 768 flottants par ligne alourdiraient chaque
+        // `select(JobOffer::as_select())`, y compris les listes renvoyees au front. Le vecteur est
+        // lu et ecrit par colonne explicite, comme `candidate_profile.embedding`.
+        embedding -> Nullable<Vector>,
     }
 }
 diesel::table! {
@@ -281,6 +288,18 @@ diesel::table! {
         last_modified_date -> Nullable<Timestamp>,
     }
 }
+diesel::table! {
+    chat_message (id) {
+        id -> Uuid,
+        conversation_id -> Varchar,
+        user_id -> Varchar,
+        sequence -> Int4,
+        role -> Varchar,
+        content -> Text,
+        payload -> Text,
+        created_at -> Timestamp,
+    }
+}
 // jhipster-needle-add-entity-schema
 
 diesel::allow_tables_to_appear_in_same_query!(
@@ -299,5 +318,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     cv_resume_version,
     offer_positioning,
     offer_tailored_resume,
+    chat_message,
     // jhipster-needle-add-allow-table
 );

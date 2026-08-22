@@ -1,9 +1,12 @@
 //! Recherche et matching d'offres (`/api/job-copilot/jobs`).
 //!
-//! Ecart assume par rapport a l'app Spring : `job_offer` ne porte pas encore de colonne
-//! `embedding`, donc `search-smart`, `match` et `match-advanced` classent le corpus par
-//! pertinence lexicale au lieu de pgvector + BM25 + RRF + reranking. Les formes de reponse sont
-//! celles attendues par le front ; seule la qualite du classement reste a rattraper.
+//! `search-smart`, `match` et `match-advanced` classent le corpus par similarite vectorielle
+//! (pgvector, via [`crate::services::job_offer_vector_index::JobOfferVectorIndex`]), avec repli
+//! lexical tant qu'une offre n'est pas vectorisee.
+//!
+//! Ecart restant avec l'app Spring : celle-ci fusionne le vectoriel et BM25 par Reciprocal Rank
+//! Fusion puis reclasse avec un cross-encoder. Le RRF et le reranking ne sont pas portes — rig
+//! n'expose de client de reranking que pour VoyageAI, pas pour le provider utilise ici.
 
 use axum::{
     extract::{Path, Query, State},
@@ -131,7 +134,7 @@ pub async fn search(
     Ok(Json(offers.into_iter().map(JobOfferDto::from).collect()))
 }
 
-/// Recherche sur le corpus deja ingere : instantanee, sans appel aux sources externes.
+/// Recherche semantique sur le corpus deja ingere, sans appel aux sources externes.
 #[utoipa::path(
     get,
     path = "/api/job-copilot/jobs/search-smart",
@@ -166,12 +169,14 @@ pub async fn search_smart(
         None => params.query.clone(),
     };
 
-    let offers = JobSearchService::search_lexical(
+    let offers = JobSearchService::search_semantic(
+        &state.job_offer_index,
         &mut conn,
         &query,
         params.source.as_deref(),
         params.limit.unwrap_or(DEFAULT_LIMIT),
-    )?;
+    )
+    .await?;
 
     Ok(Json(offers.into_iter().map(JobOfferDto::from).collect()))
 }
@@ -216,9 +221,9 @@ pub async fn match_jobs(
     run_match(&state, &auth, params.top_k.unwrap_or(DEFAULT_LIMIT), params.location.as_deref()).await
 }
 
-/// Variante « avancee ». Elle partage aujourd'hui le pipeline de `match` : la version Java les
-/// differencie par la strategie de recuperation (cosinus contre hybride reranke), distinction qui
-/// n'existe pas encore ici faute d'embeddings d'offres.
+/// Variante « avancee ». Elle partage le pipeline de `match` : la version Java les differencie par
+/// la strategie de recuperation (cosinus seul contre hybride reranke), et c'est le reranking qui
+/// manque ici — pas les embeddings.
 #[utoipa::path(
     get,
     path = "/api/job-copilot/jobs/match-advanced",
@@ -258,8 +263,18 @@ async fn run_match(
 
     // Pre-filtrage par pertinence plutot que scoring de tout le corpus : sinon on renvoie des
     // offres sans rapport, avec un score faible mais bien presentes dans la liste.
+    //
+    // Le pre-filtrage est semantique : c'est ce qui permet a un profil « DevOps » de remonter une
+    // annonce « ingenieur infrastructure », que le lexical manquait faute de mot commun.
     let query = profile_query(&profile);
-    let offers = JobSearchService::search_lexical(&mut conn, &query, None, top_k.max(1))?;
+    let offers = JobSearchService::search_semantic(
+        &state.job_offer_index,
+        &mut conn,
+        &query,
+        None,
+        top_k.max(1),
+    )
+    .await?;
 
     let results = JobMatchingService::match_jobs(&profile, &offers, preferences.as_ref(), location);
     Ok(Json(results))

@@ -127,10 +127,7 @@ pub fn create_test_config() -> AppConfig {
 
 /// Creates a test AppState with test database
 pub fn create_test_state() -> AppState {
-    AppState {
-        pool: create_test_pool(),
-        config: create_test_config(),
-    }
+    AppState::new(create_test_pool(), create_test_config())
 }
 
 /// Gets or creates a test admin user and returns their login

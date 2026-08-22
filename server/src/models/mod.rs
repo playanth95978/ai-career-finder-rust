@@ -29,3 +29,5 @@ pub use offer_positioning::*;
 pub mod offer_tailored_resume;
 pub use offer_tailored_resume::*;
 // jhipster-needle-add-entity-model - JHipster will add entity models here
+pub mod chat_message;
+pub use chat_message::*;

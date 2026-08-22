@@ -19,10 +19,13 @@ use crate::errors::AppError;
 use crate::models::{JobOffer, NewJobOffer};
 use crate::services::connectors::ats_connector::AtsConnector;
 use crate::services::connectors::emploi_nc::EmploiNcConnector;
+use crate::services::job_offer_vector_index::JobOfferVectorIndex;
 
 /// Statut d'embedding porte par les offres indexees, aligne sur l'enum Java `EmbeddingStatus`.
 pub const EMBEDDING_STATUS_PENDING: &str = "PENDING";
 pub const EMBEDDING_STATUS_COMPLETED: &str = "COMPLETED";
+/// Offre dont la vectorisation a echoue trop de fois : elle n'est plus retentee par le poller.
+pub const EMBEDDING_STATUS_FAILED: &str = "FAILED";
 
 /// Plafond du nombre d'offres classees par la recherche lexicale. Sans borne, une requete d'un
 /// seul mot courant ramenerait le corpus entier pour n'en afficher que trente lignes.
@@ -350,6 +353,62 @@ impl JobSearchService {
             .collect()
     }
 
+    /// Recherche semantique avec repli lexical.
+    ///
+    /// C'est le chemin utilise par `search-smart` et le pre-filtrage du matching. Le repli n'est
+    /// pas une precaution decorative : tant que le poller n'a pas vectorise le corpus — et pour
+    /// toute offre dont l'embedding a echoue — la recherche vectorielle ne renvoie rien. Repondre
+    /// « aucun resultat » alors que des offres pertinentes existent serait pire qu'un classement
+    /// lexical approximatif.
+    pub async fn search_semantic(
+        index: &JobOfferVectorIndex,
+        conn: &mut DbConnection,
+        query: &str,
+        source: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<JobOffer>, AppError> {
+        let trimmed = query.trim();
+        if trimmed.is_empty() {
+            return Self::search_lexical(conn, query, source, limit);
+        }
+
+        // Le seuil n'est PAS applique en SQL : il faut pouvoir distinguer « le corpus n'a aucun
+        // vecteur » (repli lexical legitime) de « aucune offre n'est assez proche » (resultat vide
+        // correct). Filtrer en base confondrait les deux en une seule liste vide.
+        let hits = match index.search(trimmed, limit, None).await {
+            Ok(hits) => hits,
+            Err(e) => {
+                // Modele d'embedding injoignable : on degrade au lexical plutot que de renvoyer
+                // une erreur a l'utilisateur, dont la recherche fonctionnait la minute d'avant.
+                tracing::warn!(error = %e, "Recherche vectorielle indisponible, repli lexical");
+                return Self::search_lexical(conn, query, source, limit);
+            }
+        };
+
+        if hits.is_empty() {
+            // Rien de vectorise (poller pas encore passe, ou embeddings en echec) : le lexical
+            // reste la seule facon de repondre quelque chose d'utile.
+            tracing::debug!("Aucune offre vectorisee, repli lexical");
+            return Self::search_lexical(conn, query, source, limit);
+        }
+
+        let floor = similarity_floor();
+        let offers: Vec<JobOffer> = hits
+            .into_iter()
+            .filter(|(similarity, _)| *similarity >= floor)
+            .map(|(_, offer)| offer)
+            // Le filtrage par source se fait apres coup : l'index ne gere pas les filtres par
+            // metadonnees, et le faire en SQL avant le tri vectoriel exigerait de dupliquer la
+            // requete. Sur ces volumes, filtrer un top-N est negligeable.
+            .filter(|offer| matches_source(offer, source))
+            .collect();
+
+        // Pas de repli ici, meme si la liste est vide : le corpus est vectorise et rien n'atteint
+        // le seuil. Repondre « aucun resultat » est la bonne reponse, et se rabattre sur le
+        // lexical ne ferait que reintroduire le bruit qu'on vient d'ecarter.
+        Ok(offers)
+    }
+
     /// Nombre d'offres reellement indexees (embedding termine), donc interrogeables par l'IA.
     pub fn indexed_count(conn: &mut DbConnection) -> Result<i64, AppError> {
         Ok(job_offer::table
@@ -379,6 +438,49 @@ impl JobSearchService {
 
         Ok((items, total))
     }
+}
+
+/// Similarite cosinus minimale pour qu'une offre soit consideree pertinente.
+///
+/// Mesure sur le corpus emploi.nc avec `nomic-embed-text` (768 dimensions) :
+///
+/// | requete                                         | meilleure similarite |
+/// |-------------------------------------------------|----------------------|
+/// | « developpeur full stack » (correspondance)     | 0.761                |
+/// | « conteneurisation et automatisation »          | 0.595                |
+/// | « ingenieur infrastructure cloud » (semantique) | 0.593                |
+/// | « recette de cuisine »                          | 0.562                |
+/// | « plombier chauffagiste »                       | 0.528                |
+/// | « boulanger patissier »                         | 0.524                |
+///
+/// La fenetre entre le pertinent le plus faible (0.593) et le hors-sujet le plus fort (0.562) est
+/// mince : ce modele compresse les scores. La valeur par defaut ecarte le hors-sujet franc sans
+/// couper la recherche semantique, mais elle depend du modele et du corpus — d'ou la surcharge par
+/// `JOB_SEARCH_SIMILARITY_FLOOR`.
+///
+/// Les prefixes de tache de nomic (`search_query:` / `search_document:`) ont ete essayes : ils
+/// *reduisent* la separation sur ce corpus (+0.034 contre +0.080), ils ne sont donc pas utilises.
+const DEFAULT_SIMILARITY_FLOOR: f64 = 0.55;
+
+fn similarity_floor() -> f64 {
+    std::env::var("JOB_SEARCH_SIMILARITY_FLOOR")
+        .ok()
+        .and_then(|raw| raw.trim().parse::<f64>().ok())
+        // Une valeur hors de [0, 1] ne peut pas etre une similarite cosinus : on ignore la
+        // surcharge plutot que de filtrer tout ou rien silencieusement.
+        .filter(|value| (0.0..=1.0).contains(value))
+        .unwrap_or(DEFAULT_SIMILARITY_FLOOR)
+}
+
+/// Vrai si l'offre appartient a la source demandee. Une source absente ne filtre rien.
+fn matches_source(offer: &JobOffer, source: Option<&str>) -> bool {
+    let Some(wanted) = source.map(str::trim).filter(|s| !s.is_empty()) else {
+        return true;
+    };
+    offer
+        .source
+        .as_deref()
+        .is_some_and(|actual| actual.eq_ignore_ascii_case(wanted))
 }
 
 /// Replie les diacritiques latins et passe en minuscules, pendant Rust d'`unaccent`.
@@ -489,6 +591,33 @@ mod tests {
 
         let neither = offer_with("Comptable", None, Some("saisie"));
         assert_eq!(JobSearchService::lexical_score(&neither, &terms), 0);
+    }
+
+    #[test]
+    fn similarity_floor_stays_a_valid_cosine_similarity() {
+        // Ce test lit une variable de processus sans la modifier : muter l'environnement rendrait
+        // les tests dependants de leur ordre d'execution.
+        let floor = similarity_floor();
+        assert!((0.0..=1.0).contains(&floor));
+        if std::env::var("JOB_SEARCH_SIMILARITY_FLOOR").is_err() {
+            assert_eq!(floor, DEFAULT_SIMILARITY_FLOOR);
+        }
+    }
+
+    #[test]
+    fn matches_source_ignores_case_and_treats_absent_as_no_filter() {
+        let mut offer = offer_with("Dev", None, None);
+        offer.source = Some("EMPLOI_NC".to_string());
+
+        assert!(matches_source(&offer, None));
+        assert!(matches_source(&offer, Some("")));
+        assert!(matches_source(&offer, Some("emploi_nc")));
+        assert!(!matches_source(&offer, Some("ADZUNA")));
+
+        // Une offre sans source ne correspond a aucune source demandee explicitement.
+        let sourceless = offer_with("Dev", None, None);
+        assert!(matches_source(&sourceless, None));
+        assert!(!matches_source(&sourceless, Some("EMPLOI_NC")));
     }
 
     #[test]

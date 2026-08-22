@@ -81,11 +81,15 @@ async fn main() {
             .allow_headers(Any)
     };
 
+    // Poller d'embedding des offres : l'ingestion les marque PENDING, ce poller ecrit leur
+    // vecteur en tache de fond. Sans lui, `/jobs/indexed-count` resterait a zero et la recherche
+    // semantique se replierait indefiniment sur le lexical.
+    job_search_rust::services::job_offer_embedding_service::JobOfferEmbeddingService::spawn_poller(
+        pool.clone(),
+    );
+
     // Build application state
-    let state = AppState {
-        pool,
-        config: config.clone(),
-    };
+    let state = AppState::new(pool, config.clone());
 
     // Build application routes
     let mut app = Router::new()
@@ -154,6 +158,7 @@ fn api_routes(state: AppState) -> Router<AppState> {
         .nest("/job-copilot/jobs", handlers::job_copilot_search::routes())
         .nest("/job-copilot/applications", handlers::job_copilot_application::routes())
         .nest("/cv-builder", handlers::cv_builder::routes())
+        .nest("/chat-history", handlers::chat_history::routes())
         // jhipster-needle-add-entity-route - JHipster will add entity routes here
         .layer(middleware::from_fn_with_state(state.clone(), auth_middleware));
 

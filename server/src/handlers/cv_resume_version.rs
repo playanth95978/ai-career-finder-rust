@@ -220,10 +220,7 @@ mod integration_tests {
     fn create_test_app() -> (TestServer, crate::AppState) {
         let pool = create_test_pool();
         let config = create_test_config();
-        let state = crate::AppState {
-            pool,
-            config,
-        };
+        let state = crate::AppState::new(pool, config);
 
         let app = Router::new()
             .nest("/api/cv-resume-versions", routes())

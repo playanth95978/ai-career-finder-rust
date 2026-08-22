@@ -147,6 +147,9 @@ use crate::handlers;
                 handlers::cv_builder::get_version,
                 handlers::cv_builder::restore_version,
                 handlers::cv_builder::get_candidate_profile,
+                // Historique de conversation
+                handlers::chat_history::get_history,
+                handlers::chat_history::get_conversation_history,
                 // jhipster-needle-add-openapi-path - JHipster will add OpenAPI paths here
     ),
     components(
@@ -217,6 +220,7 @@ use crate::handlers;
             ResumeDto,
             SaveResumeDto,
             ResumeVersionDto,
+            handlers::chat_history::ChatHistoryDto,
             handlers::ai::AiPromptResponse,
             handlers::mistral_ocr::OcrProcessResponse,
             handlers::ai::PromptRequest,

@@ -23,4 +23,17 @@ use db::connection::DbPool;
 pub struct AppState {
     pub pool: DbPool,
     pub config: AppConfig,
+    /// Index vectoriel des offres. Construit une fois au demarrage plutot qu'a chaque requete :
+    /// il implemente `VectorStoreIndex` de rig, donc il se passe tel quel a
+    /// `AgentBuilder::dynamic_context` pour le RAG de l'assistant.
+    pub job_offer_index: services::job_offer_vector_index::JobOfferVectorIndex,
+}
+
+impl AppState {
+    /// Construit l'etat applicatif, index vectoriel inclus.
+    pub fn new(pool: DbPool, config: AppConfig) -> Self {
+        let job_offer_index =
+            services::job_offer_vector_index::JobOfferVectorIndex::new(pool.clone());
+        Self { pool, config, job_offer_index }
+    }
 }
