@@ -28,6 +28,19 @@ pub const EMBEDDING_STATUS_COMPLETED: &str = "COMPLETED";
 /// seul mot courant ramenerait le corpus entier pour n'en afficher que trente lignes.
 const CORPUS_SCAN_LIMIT: i64 = 500;
 
+// `unaccent()` de Postgres (extension activee par migration).
+//
+// Sans elle, « developpeur » ne trouve aucune offre intitulee « Developpeur » avec accents, ce
+// qui rend la quasi-totalite du corpus emploi.nc introuvable des que l'utilisateur tape sans
+// accents. La fonction est STABLE et non IMMUTABLE : elle ne peut pas servir d'index, d'ou le
+// plafond de balayage `CORPUS_SCAN_LIMIT`.
+//
+// Commentaire non-doc : rustdoc ne documente pas les invocations de macro.
+diesel::sql_function! {
+    fn unaccent(text: diesel::sql_types::Nullable<diesel::sql_types::Text>)
+        -> diesel::sql_types::Nullable<diesel::sql_types::Text>;
+}
+
 /// Predicat `WHERE` compose dynamiquement sur `job_offer`, un terme de recherche a la fois.
 type BoxedPredicate = Box<
     dyn BoxableExpression<
@@ -257,12 +270,14 @@ impl JobSearchService {
             for term in &terms {
                 let pattern = format!("%{term}%");
                 // `Nullable<Bool>` et non `Bool` : `skills` et `search_text` sont nullables, donc
-                // le `ILIKE` qui les vise peut valoir NULL, ce que Diesel refletle dans le type.
+                // le `ILIKE` qui les vise peut valoir NULL, ce que Diesel reflete dans le type.
+                // Seule la colonne passe par `unaccent` : le motif vient de `tokenize`, qui a
+                // deja replie les accents cote Rust.
                 let clause: BoxedPredicate = Box::new(
-                    job_offer::title
+                    unaccent(job_offer::title.nullable())
                         .ilike(pattern.clone())
-                        .or(job_offer::skills.ilike(pattern.clone()))
-                        .or(job_offer::search_text.ilike(pattern)),
+                        .or(unaccent(job_offer::skills).ilike(pattern.clone()))
+                        .or(unaccent(job_offer::search_text).ilike(pattern)),
                 );
                 predicate = Some(match predicate {
                     None => clause,
@@ -287,7 +302,7 @@ impl JobSearchService {
 
         // Tri stable : a score egal on conserve l'ordre de publication decroissant deja etabli
         // par la requete, plutot que de reordonner arbitrairement.
-        scored.sort_by(|a, b| b.0.cmp(&a.0));
+        scored.sort_by_key(|(score, _)| std::cmp::Reverse(*score));
 
         Ok(scored
             .into_iter()
@@ -297,14 +312,17 @@ impl JobSearchService {
     }
 
     fn lexical_score(offer: &JobOffer, terms: &[String]) -> i32 {
-        let title = offer.title.to_lowercase();
-        let skills = offer.skills.as_deref().unwrap_or_default().to_lowercase();
-        let body = offer
-            .search_text
-            .as_deref()
-            .or(offer.description.as_deref())
-            .unwrap_or_default()
-            .to_lowercase();
+        // Les termes arrivent deja replies par `tokenize` : on replie donc aussi les valeurs de
+        // l'offre, sinon le score en memoire contredirait le filtre `unaccent` fait en base.
+        let title = fold_accents(&offer.title);
+        let skills = fold_accents(offer.skills.as_deref().unwrap_or_default());
+        let body = fold_accents(
+            offer
+                .search_text
+                .as_deref()
+                .or(offer.description.as_deref())
+                .unwrap_or_default(),
+        );
 
         terms
             .iter()
@@ -327,7 +345,7 @@ impl JobSearchService {
     fn tokenize(query: &str) -> Vec<String> {
         query
             .split(|c: char| !c.is_alphanumeric() && c != '+' && c != '#')
-            .map(|t| t.trim().to_lowercase())
+            .map(fold_accents)
             .filter(|t| t.chars().count() > 1)
             .collect()
     }
@@ -363,6 +381,38 @@ impl JobSearchService {
     }
 }
 
+/// Replie les diacritiques latins et passe en minuscules, pendant Rust d'`unaccent`.
+///
+/// Volontairement limite au latin etendu present dans les offres traitees (francais, et les
+/// quelques titres anglais ou espagnols des boards) : une table de translitteration complete
+/// serait une dependance de plus pour un gain nul ici.
+fn fold_accents(value: &str) -> String {
+    // Minuscules d'abord, puis repliement : sinon « À » tombe dans la branche par defaut et en
+    // ressort « à », toujours accentue.
+    value
+        .trim()
+        .to_lowercase()
+        .chars()
+        .flat_map(|c| {
+            let folded = match c {
+                'à' | 'á' | 'â' | 'ã' | 'ä' | 'å' => "a",
+                'ç' => "c",
+                'è' | 'é' | 'ê' | 'ë' => "e",
+                'ì' | 'í' | 'î' | 'ï' => "i",
+                'ñ' => "n",
+                'ò' | 'ó' | 'ô' | 'õ' | 'ö' => "o",
+                'ù' | 'ú' | 'û' | 'ü' => "u",
+                'ý' | 'ÿ' => "y",
+                'æ' => "ae",
+                'œ' => "oe",
+                'ß' => "ss",
+                _ => return vec![c],
+            };
+            folded.chars().collect::<Vec<char>>()
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -383,6 +433,32 @@ mod tests {
             JobSearchService::tokenize("Dev C++ / C#"),
             vec!["dev".to_string(), "c++".to_string(), "c#".to_string()]
         );
+    }
+
+    #[test]
+    fn tokenize_folds_accents_so_unaccented_input_matches() {
+        // Cas reel du corpus emploi.nc : les intitules portent « Developpeur » avec accents,
+        // les utilisateurs tapent sans. Les deux saisies doivent produire le meme terme.
+        assert_eq!(JobSearchService::tokenize("Développeur"), vec!["developpeur".to_string()]);
+        assert_eq!(JobSearchService::tokenize("developpeur"), vec!["developpeur".to_string()]);
+    }
+
+    #[test]
+    fn fold_accents_handles_ligatures_and_case() {
+        assert_eq!(fold_accents("Cœur"), "coeur");
+        assert_eq!(fold_accents("ÀÉÎÔÜ"), "aeiou");
+        assert_eq!(fold_accents("Straße"), "strasse");
+        // Le texte deja sans accent traverse inchange, en minuscules.
+        assert_eq!(fold_accents("  Rust  "), "rust");
+    }
+
+    #[test]
+    fn lexical_score_matches_across_accents() {
+        // Le score en memoire doit concorder avec le filtre `unaccent` fait en base : sinon une
+        // offre retenue par la requete ressortirait avec un score de zero.
+        let terms = JobSearchService::tokenize("developpeur");
+        let accented = offer_with("Développeur full-stack", None, None);
+        assert_eq!(JobSearchService::lexical_score(&accented, &terms), 2);
     }
 
     #[test]
