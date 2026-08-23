@@ -308,3 +308,67 @@ async fn cover_letter_tool_rejects_a_fabricated_offer_id() {
         "le message doit renvoyer vers l'outil de recherche, obtenu : {message}"
     );
 }
+
+/// Mesure les scores du cross-encoder sur des paires pertinentes et hors-sujet.
+///
+/// Sert a calibrer le seuil de pertinence sur des donnees, plutot que de le deviner.
+#[tokio::test]
+#[ignore = "necessite le modele de reranking"]
+async fn cross_encoder_scores_separate_relevant_from_irrelevant() {
+    use job_search_rust::services::reranker_service::RerankerService;
+
+    let documents = vec![
+        "Plombier chauffagiste - installation et entretien de chaudieres".to_string(),
+        "Technicien de maintenance - reseaux de chauffage".to_string(),
+        "Secretaire comptable - saisie et rapprochement bancaire".to_string(),
+        "Syndic de copropriete - gestion locative".to_string(),
+        "Software Engineer, Cloud Infrastructure - Kubernetes".to_string(),
+    ];
+
+    let scored = RerankerService::rank_scored("plombier chauffagiste", documents.clone())
+        .await
+        .expect("modele de reranking disponible");
+
+    println!("\n--- scores pour « plombier chauffagiste » ---");
+    for (index, score) in &scored {
+        println!("  {score:>9.4}  {}", documents[*index]);
+    }
+
+    // La propriete qui compte n'est pas l'ordre exact des deux documents pertinents — « technicien
+    // de maintenance chauffage » est un aussi bon candidat que « plombier » — mais le SIGNE : les
+    // documents pertinents au-dessus de zero, les hors-sujet en dessous. C'est ce qui permet
+    // d'utiliser le score comme seuil de pertinence.
+    for (index, score) in &scored {
+        let document = &documents[*index];
+        let expected_relevant = document.starts_with("Plombier") || document.starts_with("Technicien");
+        assert_eq!(
+            *score >= 0.0,
+            expected_relevant,
+            "signe inattendu pour « {document} » : {score}"
+        );
+    }
+}
+
+/// Mesure l'effet des accents et de la langue sur le score du cross-encoder.
+#[tokio::test]
+#[ignore = "necessite le modele de reranking"]
+async fn cross_encoder_behaviour_on_french_and_accents() {
+    use job_search_rust::services::reranker_service::RerankerService;
+
+    let documents = vec![
+        "Développeur / Développeuse full-stack - ÂBORO CONSULTING - NOUMEA".to_string(),
+        "Developpeur full-stack sans accents - NOUMEA".to_string(),
+        "Software Engineer, Cloud Infrastructure - Kubernetes".to_string(),
+        "Secrétaire comptable - saisie comptable".to_string(),
+    ];
+
+    for query in ["developpeur", "développeur", "developpeur full stack", "software engineer"] {
+        let scored = RerankerService::rank_scored(query, documents.clone())
+            .await
+            .expect("modele disponible");
+        println!("\n--- requete « {query} » ---");
+        for (index, score) in &scored {
+            println!("  {score:>9.4}  {}", documents[*index]);
+        }
+    }
+}

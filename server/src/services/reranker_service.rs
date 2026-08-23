@@ -52,6 +52,55 @@ const MAX_LENGTH: usize = 128;
 /// dizaines d'offres — un lot de 256 reserverait de la memoire pour rien.
 const BATCH_SIZE: usize = 32;
 
+/// Score minimal du cross-encoder pour qu'un document soit juge pertinent.
+///
+/// # Pourquoi un seuil, et pourquoi celui-la
+///
+/// Il remplace le plancher de similarite cosinus comme mecanisme de rejet. Ce dernier etait
+/// calibre sur un corpus anglophone, ou tout le hors-sujet etait interlingue : la fenetre entre
+/// pertinent et hors-sujet ne faisait que trois centiemes. L'arrivee d'offres francaises l'a
+/// refermee pour de bon — « plombier chauffagiste » remontait « Secretaire comptable ».
+///
+/// Le score du cross-encoder est un logit. Sur des documents courts (titre + entreprise + lieu),
+/// sa frontiere naturelle est zero :
+///
+/// | document pour « plombier chauffagiste »          | score   |
+/// |--------------------------------------------------|---------|
+/// | Technicien de maintenance - reseaux de chauffage  | **+1.02** |
+/// | Plombier chauffagiste - entretien de chaudieres   | **+0.76** |
+/// | Secretaire comptable                              | −10.16  |
+/// | Syndic de copropriete                             | −10.18  |
+///
+/// Mais le document reellement soumis porte aussi un extrait de description, qui dilue le signal
+/// et decale toute la distribution vers le bas. Le seuil a donc ete etabli par bissection sur deux
+/// cas opposes du corpus reel — « developpeur » (5 offres a trouver) et « plombier chauffagiste »
+/// (aucune) :
+///
+/// | seuil | « developpeur » | « plombier chauffagiste » |
+/// |-------|-----------------|---------------------------|
+/// | −1    | 0 — faux negatifs | 0 |
+/// | −3    | 5 | 0 |
+/// | **−4** | **5** | **0** |
+/// | −5    | 5 | 0 |
+/// | −7    | 5 | 5 — faux positifs |
+///
+/// −4 est le milieu de la fenetre utilisable, donc la marge maximale des deux cotes. Quatre logits
+/// de latitude, contre trois centiemes pour le plancher cosinus : c'est ce qui en fait un reglage
+/// tenable plutot qu'un equilibre a recalibrer a chaque evolution du corpus.
+///
+/// Raccourcir le document soumis (titre seul) ramenerait la frontiere vers zero, au prix des
+/// requetes portant sur une technologie mentionnee dans le corps de l'annonce.
+const DEFAULT_RELEVANCE_FLOOR: f32 = -4.0;
+
+/// Seuil effectif, surchargeable par `RERANKER_RELEVANCE_FLOOR`.
+pub fn relevance_floor() -> f32 {
+    std::env::var("RERANKER_RELEVANCE_FLOOR")
+        .ok()
+        .and_then(|value| value.trim().parse::<f32>().ok())
+        .filter(|value| value.is_finite())
+        .unwrap_or(DEFAULT_RELEVANCE_FLOOR)
+}
+
 /// Modele charge une seule fois pour la duree du processus.
 ///
 /// Le fichier pese 279 Mo : le relire a chaque requete rendrait le reranking plus couteux que le
@@ -70,6 +119,34 @@ impl RerankerService {
             .filter(|value| !value.is_empty())
             .map(PathBuf::from)
             .unwrap_or_else(|| PathBuf::from(DEFAULT_MODEL_DIR))
+    }
+
+    /// Reclasse et renvoie les paires `(indice, score)`, du plus pertinent au moins pertinent.
+    ///
+    /// Le score du cross-encoder est un logit brut : negatif quand le document ne repond pas a la
+    /// requete, positif quand il y repond. C'est un juge de pertinence bien plus fiable que la
+    /// similarite cosinus, qui ne mesure qu'une ressemblance de surface.
+    pub async fn rank_scored(query: &str, documents: Vec<String>) -> Option<Vec<(usize, f32)>> {
+        let query = query.trim().to_string();
+        if query.is_empty() || documents.is_empty() {
+            return None;
+        }
+
+        tokio::task::spawn_blocking(move || {
+            let reranker = Self::model()?;
+            reranker
+                .rerank(&query, documents.iter().collect(), false, Some(BATCH_SIZE))
+                .ok()
+                .map(|results| {
+                    results
+                        .into_iter()
+                        .map(|r| (r.index, r.score))
+                        .collect::<Vec<(usize, f32)>>()
+                })
+        })
+        .await
+        .ok()
+        .flatten()
     }
 
     /// Vrai si le reranking est utilisable, sans le declencher.
@@ -212,6 +289,13 @@ impl RerankerService {
     /// Generique sur l'element : le service ne connait ni les offres ni les documents RAG, il ne
     /// manipule que du texte et des indices.
     pub fn apply<T>(items: Vec<T>, indices: &[usize], top_k: usize) -> Vec<T> {
+        // Aucun indice retenu = rien de pertinent : on rend une liste vide. `top_k.max(1)`
+        // ci-dessous ne compense qu'un `top_k` a zero venant d'un appelant qui n'a pas borne son
+        // parametre ; il ne doit pas fabriquer un resultat quand le classement n'en a retenu aucun.
+        if indices.is_empty() {
+            return Vec::new();
+        }
+
         let mut slots: Vec<Option<T>> = items.into_iter().map(Some).collect();
         indices
             .iter()
@@ -257,6 +341,25 @@ mod tests {
         // Garde-fou : meme si un index revenait deux fois, l'element n'est pris qu'une fois.
         let items = vec!["a", "b"];
         assert_eq!(RerankerService::apply(items, &[0, 0, 1], 3), vec!["a", "b"]);
+    }
+
+    #[test]
+    fn apply_returns_nothing_when_no_index_was_retained() {
+        // Cas central du seuil de pertinence : une requete sans aucune offre pertinente doit
+        // rendre une liste vide, pas « les moins mauvaises ».
+        assert!(RerankerService::apply(vec!["a", "b"], &[], 5).is_empty());
+    }
+
+    #[test]
+    fn relevance_floor_stays_inside_the_measured_window() {
+        // Zero est la frontiere naturelle d'un logit : negatif = ne repond pas a la requete.
+        if std::env::var("RERANKER_RELEVANCE_FLOOR").is_err() {
+            assert_eq!(relevance_floor(), DEFAULT_RELEVANCE_FLOOR);
+        }
+        // La fenetre mesuree est [-3, -5] : un defaut hors de cet intervalle reintroduirait des
+        // faux negatifs (au-dessus) ou des faux positifs (en dessous).
+        assert!((-5.0..=-3.0).contains(&DEFAULT_RELEVANCE_FLOOR));
+        assert!(relevance_floor().is_finite());
     }
 
     #[test]

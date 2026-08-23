@@ -20,7 +20,7 @@ use reqwest::Client;
 use uuid::Uuid;
 
 use crate::db::schema::job_offer;
-use crate::db::DbConnection;
+use crate::db::{DbConnection, DbPool};
 use crate::errors::AppError;
 use crate::models::{JobOffer, NewJobOffer};
 use crate::config::ats_config::AtsConfig;
@@ -656,14 +656,14 @@ impl JobSearchService {
     /// lexical approximatif.
     pub async fn search_semantic(
         index: &JobOfferVectorIndex,
-        conn: &mut DbConnection,
+        pool: &DbPool,
         query: &str,
         source: Option<&str>,
         limit: i64,
     ) -> Result<Vec<JobOffer>, AppError> {
         let trimmed = query.trim();
         if trimmed.is_empty() {
-            return Self::search_lexical(conn, query, source, limit);
+            return Self::lexical_only(pool, query, source, limit).await;
         }
 
         // Le seuil n'est PAS applique en SQL : il faut pouvoir distinguer « le corpus n'a aucun
@@ -673,13 +673,31 @@ impl JobSearchService {
         // fusion et au reclassement de quoi travailler.
         let depth = RETRIEVAL_DEPTH.max(limit);
 
-        let hits = match index.search(trimmed, depth, None).await {
+        // Les deux volets partent EN MEME TEMPS. Ils ne dependent pas l'un de l'autre et sont
+        // tous deux domines par l'attente d'un tiers — appel au modele d'embedding puis requete
+        // pgvector d'un cote, requete BM25 de l'autre — donc les enchainer payait la somme des
+        // deux latences pour rien. Le volet lexical part sur `spawn_blocking` parce que diesel
+        // est synchrone : le laisser sur le thread du runtime bloquerait l'executeur, et le volet
+        // vectoriel avec lui, ce qui annulerait le parallelisme cherche ici.
+        //
+        // Il tourne desormais meme quand le vectoriel suffit. Ce n'est pas du travail perdu : sa
+        // liste alimente la fusion RRF dans le cas nominal, et sert de repli quand le vectoriel
+        // echoue ou ne renvoie rien — les deux seuls autres cas.
+        let lexical_task = Self::spawn_lexical_leg(pool, query, source, depth);
+        let vector_result = index.search(trimmed, depth, None).await;
+
+        let lexical = lexical_task.await.unwrap_or_else(|e| {
+            tracing::warn!(error = %e, "Volet lexical interrompu, fusion sur le vectoriel seul");
+            Vec::new()
+        });
+
+        let hits = match vector_result {
             Ok(hits) => hits,
             Err(e) => {
                 // Modele d'embedding injoignable : on degrade au lexical plutot que de renvoyer
                 // une erreur a l'utilisateur, dont la recherche fonctionnait la minute d'avant.
                 tracing::warn!(error = %e, "Recherche vectorielle indisponible, repli lexical");
-                return Self::search_lexical(conn, query, source, limit);
+                return Ok(lexical.into_iter().take(limit.max(1) as usize).collect());
             }
         };
 
@@ -687,10 +705,22 @@ impl JobSearchService {
             // Rien de vectorise (poller pas encore passe, ou embeddings en echec) : le lexical
             // reste la seule facon de repondre quelque chose d'utile.
             tracing::debug!("Aucune offre vectorisee, repli lexical");
-            return Self::search_lexical(conn, query, source, limit);
+            return Ok(lexical.into_iter().take(limit.max(1) as usize).collect());
         }
 
-        let floor = similarity_floor();
+        // Le plancher cosinus ne sert que si le cross-encoder est indisponible.
+        //
+        // Il est fragile par nature : mesure sur un corpus anglophone, la fenetre entre pertinent
+        // et hors-sujet ne faisait que trois centiemes, et l'arrivee d'offres francaises l'a
+        // effectivement refermee — « plombier chauffagiste » remontait « Secretaire comptable ».
+        // Quand le cross-encoder est la, c'est lui qui juge la pertinence, avec onze logits
+        // d'ecart ; appliquer en plus le plancher cosinus ne ferait qu'ecarter a tort des offres
+        // que le juge fiable aurait retenues.
+        let floor = if RerankerService::is_available() {
+            f64::NEG_INFINITY
+        } else {
+            similarity_floor()
+        };
         let offers: Vec<JobOffer> = hits
             .into_iter()
             .filter(|(similarity, _)| *similarity >= floor)
@@ -708,20 +738,6 @@ impl JobSearchService {
         // c'est lui qui ecarte le hors-sujet franc (« boulanger patissier » sur un corpus
         // informatique). La liste lexicale n'y est pas soumise — une correspondance litterale de
         // mot est une preuve directe, pas une ressemblance a seuiller.
-        // Volet BM25, avec repli sur le classement lexical maison si l'index n'existe pas encore
-        // (migration non appliquee). Un echec ici ne doit pas faire tomber une recherche
-        // vectorielle qui a deja abouti : le lexical n'apporte que du rappel supplementaire.
-        let lexical = match Self::search_bm25(conn, query, source, depth) {
-            Ok(offers) => offers,
-            Err(e) => {
-                tracing::warn!(error = %e, "BM25 indisponible, repli sur le classement lexical");
-                Self::search_lexical(conn, query, source, depth).unwrap_or_else(|e| {
-                    tracing::warn!(error = %e, "Volet lexical indisponible, fusion sur le vectoriel seul");
-                    Vec::new()
-                })
-            }
-        };
-
         let fused = RrfFusionService::fuse(vec![offers, lexical], |offer: &JobOffer| offer.id);
 
         // Reclassement cross-encoder sur une profondeur bornee : le cosinus dit ce qui *ressemble*
@@ -732,6 +748,68 @@ impl JobSearchService {
         // Diversification en dernier : elle doit s'appliquer sur le classement final, sinon elle
         // ecarterait des offres que le reclassement aurait fait remonter.
         Ok(Self::diversify(reranked, limit.max(1) as usize))
+    }
+
+    /// Volet lexical de la recherche hybride, sur un thread bloquant.
+    ///
+    /// BM25 d'abord, avec repli sur le classement lexical maison si l'index n'existe pas encore
+    /// (migration non appliquee). Un echec ici ne doit pas faire tomber une recherche vectorielle
+    /// qui a deja abouti : le lexical n'apporte que du rappel supplementaire, donc la liste vide
+    /// est un resultat acceptable et non une erreur a propager.
+    fn spawn_lexical_leg(
+        pool: &DbPool,
+        query: &str,
+        source: Option<&str>,
+        limit: i64,
+    ) -> tokio::task::JoinHandle<Vec<JobOffer>> {
+        // Arguments possedes : la tache survit a la portee de l'appelant.
+        let pool = pool.clone();
+        let query = query.to_string();
+        let source = source.map(str::to_string);
+
+        tokio::task::spawn_blocking(move || {
+            let mut conn = match pool.get() {
+                Ok(conn) => conn,
+                Err(e) => {
+                    tracing::warn!(error = %e, "Pool sature, volet lexical abandonne");
+                    return Vec::new();
+                }
+            };
+            let source = source.as_deref();
+
+            match Self::search_bm25(&mut conn, &query, source, limit) {
+                Ok(offers) => offers,
+                Err(e) => {
+                    tracing::warn!(error = %e, "BM25 indisponible, repli sur le classement lexical");
+                    Self::search_lexical(&mut conn, &query, source, limit).unwrap_or_else(|e| {
+                        tracing::warn!(error = %e, "Volet lexical indisponible");
+                        Vec::new()
+                    })
+                }
+            }
+        })
+    }
+
+    /// Recherche purement lexicale, hors du thread du runtime.
+    ///
+    /// Utilisee quand il n'y a rien a vectoriser (requete vide) : contrairement au volet de la
+    /// recherche hybride, l'erreur est ici propagee, faute d'autre resultat a renvoyer.
+    async fn lexical_only(
+        pool: &DbPool,
+        query: &str,
+        source: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<JobOffer>, AppError> {
+        let pool = pool.clone();
+        let query = query.to_string();
+        let source = source.map(str::to_string);
+
+        tokio::task::spawn_blocking(move || {
+            let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+            Self::search_lexical(&mut conn, &query, source.as_deref(), limit)
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("Recherche lexicale interrompue : {e}")))?
     }
 
     /// Limite le nombre d'offres partageant le meme intitule et la meme entreprise, puis tronque.
@@ -775,13 +853,32 @@ impl JobSearchService {
     /// de description : le cross-encoder tronque a 512 jetons, et lui donner une annonce entiere
     /// ferait juger la moitie de son pied de page plutot que le poste.
     async fn rerank(query: &str, offers: Vec<JobOffer>, limit: i64) -> Vec<JobOffer> {
-        if offers.len() < 2 {
+        if offers.is_empty() {
             return offers;
         }
 
         let documents: Vec<String> = offers.iter().map(Self::rerank_document).collect();
-        let indices = RerankerService::rank_indices(query, documents).await;
-        RerankerService::apply(offers, &indices, limit.max(1) as usize)
+        let top_k = limit.max(1) as usize;
+
+        // `rank_scored` plutot que `rank_indices` : le score est ce qui permet d'ecarter le
+        // hors-sujet, pas seulement de l'ordonner. Sans lui, une recherche sans aucune offre
+        // pertinente renvoyait les moins mauvaises, presentees comme des resultats.
+        let Some(scored) = RerankerService::rank_scored(query, documents).await else {
+            // Modele absent : on garde l'ordre de la fusion, le plancher cosinus ayant deja filtre.
+            return offers.into_iter().take(top_k).collect();
+        };
+
+        let floor = crate::services::reranker_service::relevance_floor();
+        let relevant: Vec<usize> = scored
+            .into_iter()
+            .filter(|(_, score)| *score >= floor)
+            .map(|(index, _)| index)
+            .collect();
+
+        if relevant.is_empty() {
+            tracing::debug!(query, "Aucune offre au-dessus du seuil de pertinence");
+        }
+        RerankerService::apply(offers, &relevant, top_k)
     }
 
     /// Representation textuelle d'une offre soumise au cross-encoder.
