@@ -81,6 +81,11 @@ async fn main() {
             .allow_headers(Any)
     };
 
+    // Cross-encoder charge des le demarrage plutot qu'a la premiere recherche : voir
+    // `spawn_warmup`. Non bloquant — le serveur accepte des requetes pendant le chargement, elles
+    // se contentent alors du classement RRF.
+    job_search_rust::services::reranker_service::RerankerService::spawn_warmup();
+
     // Poller d'embedding des offres : l'ingestion les marque PENDING, ce poller ecrit leur
     // vecteur en tache de fond. Sans lui, `/jobs/indexed-count` resterait a zero et la recherche
     // semantique se replierait indefiniment sur le lexical.

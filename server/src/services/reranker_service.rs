@@ -149,6 +149,20 @@ impl RerankerService {
         .flatten()
     }
 
+    /// Charge le modele hors du chemin de la requete.
+    ///
+    /// Sans cela, la premiere recherche paie les 279 Mo de lecture ONNX, et elle les paie *sur le
+    /// thread du runtime* : `is_available()` etant appele depuis une tache async, le chargement
+    /// bloque aussi toutes les autres requetes servies par ce thread. Apres ce prechargement,
+    /// `is_available()` et `model()` ne sont plus qu'une lecture de `OnceLock`.
+    pub fn spawn_warmup() {
+        tokio::task::spawn_blocking(|| {
+            if Self::model().is_some() {
+                tracing::info!("Cross-encoder preche, reclassement actif");
+            }
+        });
+    }
+
     /// Vrai si le reranking est utilisable, sans le declencher.
     ///
     /// Utile pour ne pas payer le chargement du modele dans un chemin qui n'en a pas besoin.

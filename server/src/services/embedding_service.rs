@@ -1,6 +1,9 @@
 //! Embeddings via Ollama, avec le meme modele que l'application Spring (`nomic-embed-text`, 768
 //! dimensions) afin que les vecteurs restent comparables entre les deux backends.
 
+use std::sync::OnceLock;
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 
 use crate::errors::AppError;
@@ -11,6 +14,35 @@ const DEFAULT_MODEL: &str = "nomic-embed-text";
 pub const EMBEDDING_DIMENSIONS: usize = 768;
 /// Longueur de CV reprise dans le texte de profil, alignee sur la version Java.
 const BACKGROUND_MAX_CHARS: usize = 1000;
+
+/// Plafond d'attente d'une reponse d'Ollama.
+///
+/// Sans lui, un modele qui ne repond plus suspend indefiniment la recherche qui l'attend : la
+/// jambe vectorielle n'a alors jamais l'occasion de tomber en erreur, donc jamais celle de se
+/// replier sur le lexical. Le repli n'a de valeur que s'il est atteignable.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
+
+/// Client HTTP partage par tous les appels d'embedding.
+///
+/// Un `Client` porte son propre pool de connexions : en construire un par appel rouvrait une
+/// connexion TCP a chaque vectorisation, sans keep-alive. Le cout etait paye deux fois — a chaque
+/// recherche semantique, et sur chacune des offres d'un lot du poller.
+static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+
+fn client() -> &'static reqwest::Client {
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .timeout(REQUEST_TIMEOUT)
+            .build()
+            // Un `Client` par defaut echoue seulement si le resolveur TLS du systeme est
+            // inutilisable ; dans ce cas le repli par defaut echouera aussi, mais a l'appel,
+            // avec une erreur remontee a l'appelant plutot qu'une panique au demarrage.
+            .unwrap_or_else(|e| {
+                tracing::warn!(error = %e, "Client HTTP par defaut pour les embeddings");
+                reqwest::Client::new()
+            })
+    })
+}
 
 #[derive(Debug, Serialize)]
 struct EmbedRequest<'a> {
@@ -50,7 +82,7 @@ impl EmbeddingService {
         let model = Self::model();
         let url = format!("{}/api/embed", Self::base_url().trim_end_matches('/'));
 
-        let response = reqwest::Client::new()
+        let response = client()
             .post(&url)
             .json(&EmbedRequest { model: &model, input: text })
             .send()

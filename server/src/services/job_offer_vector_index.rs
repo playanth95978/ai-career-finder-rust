@@ -71,34 +71,42 @@ impl JobOfferVectorIndex {
         let vector = Vector::from(embedded);
         let limit = samples.clamp(1, MAX_SAMPLES);
 
-        let mut conn = self
-            .pool
-            .get()
-            .map_err(|e| AppError::Internal(e.to_string()))?;
+        // Requete deportee sur un thread bloquant : Diesel est synchrone, et un balayage HNSW
+        // n'est pas instantane. La laisser sur le thread du runtime y bloquait toutes les autres
+        // requetes — y compris la jambe lexicale de la recherche hybride, censee tourner en
+        // parallele de celle-ci.
+        let pool = self.pool.clone();
+        let rows: Vec<(JobOffer, Option<f64>)> = tokio::task::spawn_blocking(move || {
+            let mut conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
 
-        // `cosine_distance` produit l'operateur `<=>`, donc l'index HNSW pose par la migration
-        // est utilise. Le filtre sur `COMPLETED` exclut les offres pas encore vectorisees, dont
-        // le vecteur NULL ressortirait en fin de classement sans signifier quoi que ce soit.
-        let rows: Vec<(JobOffer, Option<f64>)> = job_offer::table
-            .filter(job_offer::embedding_status.eq(EMBEDDING_STATUS_COMPLETED))
-            .filter(job_offer::embedding.is_not_null())
-            // Les offres expirees sont exclues des resultats mais gardees en base : celles liees a
-            // une candidature appartiennent a l'historique de l'utilisateur.
-            .filter(
-                job_offer::expires_at
-                    .is_null()
-                    .or(job_offer::expires_at.gt(diesel::dsl::now)),
-            )
-            .order(job_offer::embedding.cosine_distance(vector.clone()))
-            .limit(limit)
-            .select((
-                JobOffer::as_select(),
-                job_offer::embedding
-                    .cosine_distance(vector)
-                    .nullable()
-                    .into_sql::<Nullable<Double>>(),
-            ))
-            .load(&mut conn)?;
+            // `cosine_distance` produit l'operateur `<=>`, donc l'index HNSW pose par la migration
+            // est utilise. Le filtre sur `COMPLETED` exclut les offres pas encore vectorisees,
+            // dont le vecteur NULL ressortirait en fin de classement sans signifier quoi que ce
+            // soit.
+            job_offer::table
+                .filter(job_offer::embedding_status.eq(EMBEDDING_STATUS_COMPLETED))
+                .filter(job_offer::embedding.is_not_null())
+                // Les offres expirees sont exclues des resultats mais gardees en base : celles
+                // liees a une candidature appartiennent a l'historique de l'utilisateur.
+                .filter(
+                    job_offer::expires_at
+                        .is_null()
+                        .or(job_offer::expires_at.gt(diesel::dsl::now)),
+                )
+                .order(job_offer::embedding.cosine_distance(vector.clone()))
+                .limit(limit)
+                .select((
+                    JobOffer::as_select(),
+                    job_offer::embedding
+                        .cosine_distance(vector)
+                        .nullable()
+                        .into_sql::<Nullable<Double>>(),
+                ))
+                .load(&mut conn)
+                .map_err(AppError::from)
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("Recherche vectorielle interrompue : {e}")))??;
 
         Ok(rows
             .into_iter()
