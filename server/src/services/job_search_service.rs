@@ -35,6 +35,7 @@ use crate::services::connectors::boards::{
 use crate::services::connectors::emploi_nc::EmploiNcConnector;
 use crate::services::connectors::feeds::{JobicyConnector, RemoteOkConnector};
 use crate::services::connectors::scrapers::{HelloWorkConnector, SeekConnector};
+use crate::services::geo_service::GeoService;
 use crate::services::job_offer_vector_index::JobOfferVectorIndex;
 use crate::services::reranker_service::RerankerService;
 use crate::services::rrf_service::RrfFusionService;
@@ -74,6 +75,23 @@ const RERANK_DEPTH: usize = 40;
 /// perte d'information ; mais les laisser occuper cinq des dix places affichees prive l'utilisateur
 /// de toute diversite. On en garde deux et on laisse la place aux autres roles.
 const MAX_PER_ROLE: usize = 2;
+
+/// Duree de vie par defaut, en jours, estampillee sur une offre ingeree qui n'annonce pas sa propre
+/// date d'expiration.
+///
+/// Sans cela la colonne `expires_at` reste NULL sur toutes les offres, le filtre d'expiration ne se
+/// declenche jamais et le corpus accumule indefiniment des annonces mortes. Meme variable
+/// d'environnement que l'application Spring (`OFFER_TTL_DAYS`), pour que les deux backends purgent
+/// au meme rythme.
+const DEFAULT_OFFER_TTL_DAYS: i64 = 30;
+
+fn offer_ttl_days() -> i64 {
+    std::env::var("OFFER_TTL_DAYS")
+        .ok()
+        .and_then(|value| value.trim().parse::<i64>().ok())
+        .filter(|days| *days > 0)
+        .unwrap_or(DEFAULT_OFFER_TTL_DAYS)
+}
 
 // Garde-fous de compilation sur le levier principal du RRF : recuperer autant que ce qu'on rend
 // priverait la fusion et le reclassement de toute marge de manoeuvre. Verifie ici plutot que dans
@@ -176,6 +194,7 @@ impl JobSearchService {
         keywords: Option<&str>,
         location: Option<&str>,
         source: Option<&str>,
+        country: Option<&str>,
     ) -> Result<Vec<JobOffer>, AppError> {
         let wanted_source = source.map(str::trim).filter(|s| !s.is_empty());
 
@@ -196,7 +215,9 @@ impl JobSearchService {
                 .map(|connector| async move {
                     (
                         connector.source().as_str(),
-                        connector.fetch_jobs(keywords, location).await,
+                        connector
+                            .fetch_jobs_by_country(keywords, location, country)
+                            .await,
                     )
                 }),
         )
@@ -216,7 +237,70 @@ impl JobSearchService {
             }
         }
 
-        Self::persist_all(conn, fetched)
+        // Les connecteurs filtrent le lieu de facon inegale : certains l'ignorent, d'autres le
+        // rapprochent grossierement. On reordonne donc les resultats agreges par proximite au lieu
+        // demande, et on ecarte les erreurs de pays certaines.
+        let persisted = Self::persist_all(conn, fetched)?;
+        Ok(Self::rerank_by_location(persisted, location, country))
+    }
+
+    /// Reordonne par proximite geographique et ecarte les offres certainement dans un autre pays.
+    ///
+    /// Deux mecanismes distincts, volontairement asymetriques :
+    ///
+    ///  - le **tri** repose sur une comparaison textuelle des libelles, donc approximative — mais
+    ///    se tromper d'ordre est sans gravite ;
+    ///  - l'**exclusion** exige une preuve structuree : un pays demande par l'appelant ET un code
+    ///    pays renseigne sur l'offre. Ecarter sur une simple divergence de libelles supprimerait
+    ///    des offres valides, « Paris » et « Ile-de-France » n'ayant aucun mot commun.
+    ///
+    /// Sans lieu ni pays demandes, la fonction ne fait rien.
+    fn rerank_by_location(
+        offers: Vec<JobOffer>,
+        search_location: Option<&str>,
+        search_country: Option<&str>,
+    ) -> Vec<JobOffer> {
+        let location = search_location.map(str::trim).filter(|v| !v.is_empty());
+        let country = search_country.map(str::trim).filter(|v| !v.is_empty());
+
+        if location.is_none() && country.is_none() {
+            return offers;
+        }
+
+        let before = offers.len();
+        let mut kept: Vec<JobOffer> = offers
+            .into_iter()
+            .filter(|offer| {
+                !GeoService::is_confident_country_mismatch(country, offer.country.as_deref())
+            })
+            .collect();
+
+        let dropped = before - kept.len();
+        if dropped > 0 {
+            tracing::info!(
+                requested_country = country,
+                dropped,
+                kept = kept.len(),
+                "Reclassement geographique : offres d'un autre pays ecartees"
+            );
+        }
+
+        if let Some(location) = location {
+            // Tri stable : a proximite egale, l'ordre d'arrivee des connecteurs est conserve.
+            kept.sort_by(|a, b| {
+                let score_of = |offer: &JobOffer| {
+                    GeoService::match_level(
+                        location,
+                        offer.location.as_deref(),
+                        offer.remote.unwrap_or(false),
+                    )
+                    .score()
+                };
+                score_of(b).total_cmp(&score_of(a))
+            });
+        }
+
+        kept
     }
 
     /// Recupere les offres publiees sur une URL de board supportee.
@@ -291,7 +375,12 @@ impl JobSearchService {
                 created_at: Some(now),
                 indexed_at: None,
                 updated_at: Some(now),
-                expires_at: offer.expires_at,
+                // Expiration annoncee par la source si elle en donne une, sinon TTL par defaut :
+                // c'est ce qui rend le filtre d'expiration operant, et c'est ce que fait
+                // l'ingestion Spring.
+                expires_at: offer
+                    .expires_at
+                    .or_else(|| now.checked_add_signed(chrono::Duration::days(offer_ttl_days()))),
                 last_checked_at: Some(now),
                 created_by: Some("system".to_string()),
                 created_date: Some(now),
@@ -389,8 +478,11 @@ impl JobSearchService {
         // parametre lie, pour que cette surete ne depende pas d'une invariante distante.
         let expression = terms.join(" OR ");
 
+        // Les offres expirees sont exclues des resultats mais conservees en base : celles liees a
+        // une candidature font partie de l'historique de l'utilisateur.
         let mut sql = String::from(
-            "SELECT id FROM job_offer WHERE search_text @@@ $1",
+            "SELECT id FROM job_offer \
+             WHERE search_text @@@ $1 AND (expires_at IS NULL OR expires_at > now())",
         );
         if source.map(str::trim).is_some_and(|s| !s.is_empty()) {
             sql.push_str(" AND upper(source) = upper($3)");
@@ -443,7 +535,15 @@ impl JobSearchService {
         let terms = Self::tokenize(query);
         let limit = limit.clamp(1, CORPUS_SCAN_LIMIT);
 
-        let mut sql = job_offer::table.into_boxed();
+        let mut sql = job_offer::table
+            .into_boxed()
+            // Meme exclusion que le volet BM25 : sans elle, les deux listes fusionnees par RRF
+            // n'auraient pas le meme perimetre.
+            .filter(
+                job_offer::expires_at
+                    .is_null()
+                    .or(job_offer::expires_at.gt(diesel::dsl::now)),
+            );
         if let Some(source) = source.map(str::trim).filter(|s| !s.is_empty()) {
             sql = sql.filter(job_offer::source.eq(source.to_uppercase()));
         }
@@ -921,6 +1021,73 @@ mod tests {
             company: Some(company.to_string()),
             ..Default::default()
         }
+    }
+
+    fn offer_at(location: &str, country: Option<&str>, remote: bool) -> JobOffer {
+        JobOffer {
+            title: format!("Poste a {location}"),
+            location: Some(location.to_string()),
+            country: country.map(str::to_owned),
+            remote: Some(remote),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn rerank_by_location_is_a_noop_without_location_or_country() {
+        let offers = vec![offer_at("Paris", Some("FR"), false), offer_at("Noumea", Some("NC"), false)];
+        let kept = JobSearchService::rerank_by_location(offers, None, None);
+        // Sans critere geographique, ni tri ni exclusion : l'ordre des connecteurs est conserve.
+        assert_eq!(kept.len(), 2);
+        assert_eq!(kept[0].location.as_deref(), Some("Paris"));
+    }
+
+    #[test]
+    fn rerank_by_location_orders_by_proximity() {
+        let offers = vec![
+            offer_at("Berlin, Germany", None, false),
+            offer_at("Noumea", None, false),
+            offer_at("Dumbea, Noumea Sud", None, false),
+        ];
+        let kept = JobSearchService::rerank_by_location(offers, Some("Noumea"), None);
+        // La correspondance exacte passe devant l'inclusion, qui passe devant l'absence de lien.
+        assert_eq!(kept[0].location.as_deref(), Some("Noumea"));
+        assert_eq!(kept.last().unwrap().location.as_deref(), Some("Berlin, Germany"));
+    }
+
+    #[test]
+    fn rerank_by_location_never_drops_on_a_textual_mismatch_alone() {
+        // Point central : « Berlin » n'a aucun rapport textuel avec « Noumea », mais sans code pays
+        // demande on ne peut pas l'affirmer — l'offre doit etre reclassee, jamais supprimee.
+        let offers = vec![offer_at("Berlin, Germany", Some("DE"), false)];
+        let kept = JobSearchService::rerank_by_location(offers, Some("Noumea"), None);
+        assert_eq!(kept.len(), 1, "aucune exclusion sans pays demande");
+    }
+
+    #[test]
+    fn rerank_by_location_drops_only_on_a_proven_country_mismatch() {
+        let offers = vec![
+            offer_at("Paris", Some("FR"), false),
+            offer_at("New York", Some("US"), false),
+            // Pays inconnu : on ne conclut pas, elle reste.
+            offer_at("Quelque part", None, false),
+        ];
+        let kept = JobSearchService::rerank_by_location(offers, None, Some("fr"));
+        let countries: Vec<Option<&str>> = kept.iter().map(|o| o.country.as_deref()).collect();
+        assert!(countries.contains(&Some("FR")));
+        assert!(countries.contains(&None), "un pays inconnu ne suffit pas a exclure");
+        assert!(!countries.contains(&Some("US")), "le pays preuve doit exclure");
+    }
+
+    #[test]
+    fn rerank_by_location_keeps_remote_offers_wherever_they_are() {
+        let offers = vec![
+            offer_at("Berlin, Germany", None, true),
+            offer_at("Berlin, Germany", None, false),
+        ];
+        let kept = JobSearchService::rerank_by_location(offers, Some("Noumea"), None);
+        // Le teletravail est tenable depuis Noumea : il passe devant le meme poste sur site.
+        assert_eq!(kept[0].remote, Some(true));
     }
 
     #[test]

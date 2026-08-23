@@ -46,6 +46,8 @@ pub mod cover_letter_service;
 pub use cover_letter_service::*;
 pub mod cv_builder_service;
 pub use cv_builder_service::*;
+pub mod geo_service;
+pub use geo_service::*;
 pub mod reranker_service;
 pub use reranker_service::*;
 pub mod job_agent_service;

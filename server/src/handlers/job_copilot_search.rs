@@ -55,9 +55,9 @@ pub struct SearchParams {
     pub keywords: Option<String>,
     pub location: Option<String>,
     pub source: Option<String>,
-    /// Retenu pour la compatibilite d'URL avec la version Java (il y selectionne le marche
-    /// Adzuna). Le seul connecteur porte, emploi.nc, ne couvre qu'un pays : le parametre est donc
-    /// accepte puis ignore, plutot que de faire echouer une requete du front.
+    /// Marche demande (fr, gb, us, au…). Selectionne le marche des connecteurs partitionnes par
+    /// pays (Adzuna, Careerjet) et sert de preuve pour ecarter les offres d'un autre pays lors du
+    /// reclassement geographique.
     pub country: Option<String>,
 }
 
@@ -106,7 +106,7 @@ pub struct UrlParam {
         ("keywords" = Option<String>, Query, description = "Mots-cles"),
         ("location" = Option<String>, Query, description = "Ville"),
         ("source" = Option<String>, Query, description = "Restreint a une source"),
-        ("country" = Option<String>, Query, description = "Accepte pour compatibilite, sans effet")
+        ("country" = Option<String>, Query, description = "Marche (fr, gb, us, au…) : selectionne le marche des sources partitionnees et filtre les autres pays")
     ),
     responses(
         (status = 200, description = "Offres trouvees", body = Vec<JobOfferDto>),
@@ -128,6 +128,7 @@ pub async fn search(
         params.keywords.as_deref(),
         params.location.as_deref(),
         params.source.as_deref(),
+        params.country.as_deref(),
     )
     .await?;
 

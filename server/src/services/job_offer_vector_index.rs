@@ -82,6 +82,13 @@ impl JobOfferVectorIndex {
         let rows: Vec<(JobOffer, Option<f64>)> = job_offer::table
             .filter(job_offer::embedding_status.eq(EMBEDDING_STATUS_COMPLETED))
             .filter(job_offer::embedding.is_not_null())
+            // Les offres expirees sont exclues des resultats mais gardees en base : celles liees a
+            // une candidature appartiennent a l'historique de l'utilisateur.
+            .filter(
+                job_offer::expires_at
+                    .is_null()
+                    .or(job_offer::expires_at.gt(diesel::dsl::now)),
+            )
             .order(job_offer::embedding.cosine_distance(vector.clone()))
             .limit(limit)
             .select((
