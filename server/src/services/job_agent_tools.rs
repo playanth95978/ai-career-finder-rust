@@ -206,9 +206,8 @@ impl Tool for SearchJobOffersTool {
             .unwrap_or(DEFAULT_TOOL_LIMIT)
             .clamp(1, MAX_TOOL_LIMIT);
 
-        let mut conn = self.0.conn()?;
         let offers =
-            JobSearchService::search_semantic(&self.0.index, &mut conn, &args.query, None, limit)
+            JobSearchService::search_semantic(&self.0.index, &self.0.pool, &args.query, None, limit)
                 .await?;
 
         let results: Vec<JobOfferSummaryDto> =
@@ -264,7 +263,7 @@ impl Tool for MatchOffersToProfileTool {
 
         let mut conn = self.0.conn()?;
         let offers =
-            JobSearchService::search_semantic(&self.0.index, &mut conn, &args.query, None, limit)
+            JobSearchService::search_semantic(&self.0.index, &self.0.pool, &args.query, None, limit)
                 .await?;
 
         let preferences = crate::db::schema::user_preference::table

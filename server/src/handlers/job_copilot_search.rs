@@ -161,8 +161,6 @@ pub async fn search_smart(
         return Err(AppError::Forbidden("Access denied".to_string()));
     }
 
-    let mut conn = state.pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
-
     // Le lieu est concatene a la requete plutot que filtre durement : il biaise le classement
     // sans exclure une offre voisine qui reste pertinente. Comportement identique au Java.
     let query = match params.location.as_deref().map(str::trim).filter(|l| !l.is_empty()) {
@@ -172,7 +170,7 @@ pub async fn search_smart(
 
     let offers = JobSearchService::search_semantic(
         &state.job_offer_index,
-        &mut conn,
+        &state.pool,
         &query,
         params.source.as_deref(),
         params.limit.unwrap_or(DEFAULT_LIMIT),
@@ -270,7 +268,7 @@ async fn run_match(
     let query = profile_query(&profile);
     let offers = JobSearchService::search_semantic(
         &state.job_offer_index,
-        &mut conn,
+        &state.pool,
         &query,
         None,
         top_k.max(1),
