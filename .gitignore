@@ -183,3 +183,14 @@ Thumbs.db
 ######################
 /client/src/swagger-ui/*
 !/client/src/swagger-ui/index.html
+
+######################
+# Modeles de reranking
+######################
+# Le modele ONNX pese 279 Mo et le tokenizer 17 Mo : hors de question de les versionner.
+# Les recuperer avec scripts/download-rerankers.sh avant le premier demarrage ; en leur absence
+# le reranking se desactive proprement et la recherche continue de fonctionner.
+scripts/rerankers/*/model.onnx
+scripts/rerankers/*/model.onnx.data
+scripts/rerankers/*/tokenizer.json
+

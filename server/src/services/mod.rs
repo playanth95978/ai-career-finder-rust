@@ -46,6 +46,8 @@ pub mod cover_letter_service;
 pub use cover_letter_service::*;
 pub mod cv_builder_service;
 pub use cv_builder_service::*;
+pub mod reranker_service;
+pub use reranker_service::*;
 pub mod job_agent_service;
 pub use job_agent_service::*;
 pub mod job_agent_tools;
@@ -61,6 +63,9 @@ pub use job_matching_service::*;
 pub mod job_search_service;
 pub use job_search_service::*;
 pub mod connectors;
+pub mod rrf_service;
+pub use rrf_service::*;
+
 pub use connectors::*;
 
 pub use mistral_ocr_service::*;

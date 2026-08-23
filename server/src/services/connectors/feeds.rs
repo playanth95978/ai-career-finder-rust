@@ -3,9 +3,8 @@
 //! Ni l'un ni l'autre n'accepte de parametre de requete : le flux entier est recupere puis filtre
 //! en memoire. C'est ce qui les distingue des agregateurs, ou la recherche se fait cote serveur.
 
-use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use async_trait::async_trait;
 use lazy_static::lazy_static;
@@ -413,6 +412,7 @@ fn non_empty(value: String) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     fn jobicy_config() -> JobicyConfig {
         JobicyConfig {

@@ -4,13 +4,20 @@
 //! La recherche semantique passe par [`JobOfferVectorIndex`] (pgvector) ; le classement lexical
 //! de ce module reste le repli quand une offre n'est pas encore vectorisee.
 //!
-//! Ecart restant avec l'application Spring : elle fusionne le vectoriel et BM25 par Reciprocal
-//! Rank Fusion puis reclasse avec un cross-encoder. Ni le RRF ni le reranking ne sont portes.
+//! Le pipeline complet est celui de l'application Spring : recuperation vectorielle et lexicale,
+//! fusion par Reciprocal Rank Fusion ([`RrfFusionService`]), puis reclassement cross-encoder ONNX
+//! ([`RerankerService`]).
+//!
+//! Ecart restant : le volet lexical est un score de correspondance maison (titre pondere,
+//! competences, description) et non un vrai BM25 — `pg_search` est installe dans l'image
+//! ParadeDB mais pas encore exploite.
 
 use chrono::Utc;
 use diesel::prelude::*;
 use diesel::PgTextExpressionMethods;
 use reqwest::Client;
+
+use uuid::Uuid;
 
 use crate::db::schema::job_offer;
 use crate::db::DbConnection;
@@ -29,6 +36,8 @@ use crate::services::connectors::emploi_nc::EmploiNcConnector;
 use crate::services::connectors::feeds::{JobicyConnector, RemoteOkConnector};
 use crate::services::connectors::scrapers::{HelloWorkConnector, SeekConnector};
 use crate::services::job_offer_vector_index::JobOfferVectorIndex;
+use crate::services::reranker_service::RerankerService;
+use crate::services::rrf_service::RrfFusionService;
 
 /// Statut d'embedding porte par les offres indexees, aligne sur l'enum Java `EmbeddingStatus`.
 pub const EMBEDDING_STATUS_PENDING: &str = "PENDING";
@@ -39,6 +48,39 @@ pub const EMBEDDING_STATUS_FAILED: &str = "FAILED";
 /// Plafond du nombre d'offres classees par la recherche lexicale. Sans borne, une requete d'un
 /// seul mot courant ramenerait le corpus entier pour n'en afficher que trente lignes.
 const CORPUS_SCAN_LIMIT: i64 = 500;
+
+/// Nombre de candidats recuperes **par liste** avant fusion, independamment du nombre demande.
+///
+/// C'est le levier principal sur la qualite de la sortie RRF. Passer directement la limite de
+/// l'appelant aux deux recuperations donnait un cas absurde : pour `limit = 5`, la fusion recevait
+/// 5 vecteurs et 5 resultats BM25, soit 10 candidats au plus, dont il fallait deja rendre 5. Ni la
+/// fusion ni le cross-encoder n'avaient de marge de manoeuvre.
+///
+/// Le rapport usuel en recherche hybride est de recuperer un ordre de grandeur de plus que ce qu'on
+/// rend, puis de laisser le reclassement trancher.
+const RETRIEVAL_DEPTH: i64 = 60;
+
+/// Nombre maximum de candidats soumis au cross-encoder.
+///
+/// L'inference coute environ une dizaine de millisecondes par paire : reclasser les 120 candidats
+/// que peut produire la fusion ajouterait plus d'une seconde a la recherche pour departager des
+/// offres qui ne seront jamais affichees.
+const RERANK_DEPTH: usize = 40;
+
+/// Nombre maximum d'offres partageant le meme intitule et la meme entreprise dans les resultats.
+///
+/// Mesure sur le corpus : « Applied AI Engineer » chez openai existe en cinq exemplaires — Abu
+/// Dhabi, Delhi, Londres, Seoul, Sydney. Ce sont cinq postes reels, donc les dedupliquer serait une
+/// perte d'information ; mais les laisser occuper cinq des dix places affichees prive l'utilisateur
+/// de toute diversite. On en garde deux et on laisse la place aux autres roles.
+const MAX_PER_ROLE: usize = 2;
+
+// Garde-fous de compilation sur le levier principal du RRF : recuperer autant que ce qu'on rend
+// priverait la fusion et le reclassement de toute marge de manoeuvre. Verifie ici plutot que dans
+// un test, ou l'assertion porterait sur des constantes et ne s'evaluerait jamais a l'execution.
+const _: () = assert!(RETRIEVAL_DEPTH >= 30, "profondeur de recuperation trop faible");
+const _: () = assert!(RERANK_DEPTH <= (RETRIEVAL_DEPTH as usize) * 2);
+const _: () = assert!(MAX_PER_ROLE >= 1, "un plafond nul viderait les resultats");
 
 // `unaccent()` de Postgres (extension activee par migration).
 //
@@ -51,6 +93,13 @@ const CORPUS_SCAN_LIMIT: i64 = 500;
 diesel::sql_function! {
     fn unaccent(text: diesel::sql_types::Nullable<diesel::sql_types::Text>)
         -> diesel::sql_types::Nullable<diesel::sql_types::Text>;
+}
+
+/// Identifiant renvoye par la requete BM25, avant chargement des offres.
+#[derive(diesel::QueryableByName)]
+struct Bm25Hit {
+    #[diesel(sql_type = diesel::sql_types::Uuid)]
+    id: Uuid,
 }
 
 /// Predicat `WHERE` compose dynamiquement sur `job_offer`, un terme de recherche a la fois.
@@ -312,6 +361,79 @@ impl JobSearchService {
     /// Le score est le nombre de termes trouves, pondere : un terme dans le titre compte double,
     /// parce qu'un intitule qui contient le mot cherche est presque toujours plus pertinent
     /// qu'une mention noyee dans le corps de l'annonce.
+    /// Recherche BM25 via l'index `pg_search`.
+    ///
+    /// Remplace le classement lexical maison : frontieres de mots, ponderation IDF des termes,
+    /// saturation de frequence et normalisation par longueur de document — voir la migration
+    /// `add_job_offer_bm25_index` pour les mesures qui ont motive la configuration du tokenizer.
+    ///
+    /// Renvoie `Err` quand l'index est absent (migration non appliquee) pour que l'appelant puisse
+    /// se rabattre sur [`Self::search_lexical`].
+    pub fn search_bm25(
+        conn: &mut DbConnection,
+        query: &str,
+        source: Option<&str>,
+        limit: i64,
+    ) -> Result<Vec<JobOffer>, AppError> {
+        let terms = Self::tokenize(query);
+        if terms.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Requete en OR sur les termes : BM25 se charge de classer, un ET exclurait toute offre a
+        // laquelle il manque un seul mot de la requete.
+        //
+        // Les termes viennent de `tokenize`, qui ne garde qu'alphanumerique plus `+` et `#`. Ils ne
+        // peuvent donc pas contenir les metacaracteres de la syntaxe de requete (`:`, `"`, `(`,
+        // `^`, `~`), ce qui rend l'interpolation sure ici — mais on les passe malgre tout en
+        // parametre lie, pour que cette surete ne depende pas d'une invariante distante.
+        let expression = terms.join(" OR ");
+
+        let mut sql = String::from(
+            "SELECT id FROM job_offer WHERE search_text @@@ $1",
+        );
+        if source.map(str::trim).is_some_and(|s| !s.is_empty()) {
+            sql.push_str(" AND upper(source) = upper($3)");
+        }
+        sql.push_str(" ORDER BY paradedb.score(id) DESC LIMIT $2");
+
+        let ids: Vec<Uuid> = {
+            let base = diesel::sql_query(&sql)
+                .bind::<diesel::sql_types::Text, _>(expression)
+                .bind::<diesel::sql_types::BigInt, _>(limit.clamp(1, CORPUS_SCAN_LIMIT));
+
+            match source.map(str::trim).filter(|s| !s.is_empty()) {
+                Some(source) => base
+                    .bind::<diesel::sql_types::Text, _>(source.to_string())
+                    .load::<Bm25Hit>(conn),
+                None => base.load::<Bm25Hit>(conn),
+            }
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .into_iter()
+            .map(|hit| hit.id)
+            .collect()
+        };
+
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        // Deuxieme requete pour charger les offres : `sql_query` ne sait pas materialiser un
+        // `JobOffer` (la table porte une colonne `vector` que le modele n'expose pas), et le
+        // faire en une passe demanderait de lister les trente-cinq colonnes a la main.
+        let mut offers: Vec<JobOffer> = job_offer::table
+            .filter(job_offer::id.eq_any(&ids))
+            .select(JobOffer::as_select())
+            .load(conn)?;
+
+        // `eq_any` perd l'ordre du classement : on le restaure depuis la position dans `ids`.
+        let rank_of: std::collections::HashMap<Uuid, usize> =
+            ids.iter().enumerate().map(|(i, id)| (*id, i)).collect();
+        offers.sort_by_key(|offer| rank_of.get(&offer.id).copied().unwrap_or(usize::MAX));
+
+        Ok(offers)
+    }
+
     pub fn search_lexical(
         conn: &mut DbConnection,
         query: &str,
@@ -447,7 +569,11 @@ impl JobSearchService {
         // Le seuil n'est PAS applique en SQL : il faut pouvoir distinguer « le corpus n'a aucun
         // vecteur » (repli lexical legitime) de « aucune offre n'est assez proche » (resultat vide
         // correct). Filtrer en base confondrait les deux en une seule liste vide.
-        let hits = match index.search(trimmed, limit, None).await {
+        // Profondeur de recuperation independante du nombre demande : c'est ce qui donne a la
+        // fusion et au reclassement de quoi travailler.
+        let depth = RETRIEVAL_DEPTH.max(limit);
+
+        let hits = match index.search(trimmed, depth, None).await {
             Ok(hits) => hits,
             Err(e) => {
                 // Modele d'embedding injoignable : on degrade au lexical plutot que de renvoyer
@@ -475,10 +601,107 @@ impl JobSearchService {
             .filter(|offer| matches_source(offer, source))
             .collect();
 
-        // Pas de repli ici, meme si la liste est vide : le corpus est vectorise et rien n'atteint
-        // le seuil. Repondre « aucun resultat » est la bonne reponse, et se rabattre sur le
-        // lexical ne ferait que reintroduire le bruit qu'on vient d'ecarter.
-        Ok(offers)
+        // Pipeline hybride complet, comme la version Spring : vectoriel + lexical fusionnes par
+        // RRF, puis reclasses par le cross-encoder.
+        //
+        // Le seuil de similarite est applique AVANT la fusion, sur la seule liste vectorielle :
+        // c'est lui qui ecarte le hors-sujet franc (« boulanger patissier » sur un corpus
+        // informatique). La liste lexicale n'y est pas soumise — une correspondance litterale de
+        // mot est une preuve directe, pas une ressemblance a seuiller.
+        // Volet BM25, avec repli sur le classement lexical maison si l'index n'existe pas encore
+        // (migration non appliquee). Un echec ici ne doit pas faire tomber une recherche
+        // vectorielle qui a deja abouti : le lexical n'apporte que du rappel supplementaire.
+        let lexical = match Self::search_bm25(conn, query, source, depth) {
+            Ok(offers) => offers,
+            Err(e) => {
+                tracing::warn!(error = %e, "BM25 indisponible, repli sur le classement lexical");
+                Self::search_lexical(conn, query, source, depth).unwrap_or_else(|e| {
+                    tracing::warn!(error = %e, "Volet lexical indisponible, fusion sur le vectoriel seul");
+                    Vec::new()
+                })
+            }
+        };
+
+        let fused = RrfFusionService::fuse(vec![offers, lexical], |offer: &JobOffer| offer.id);
+
+        // Reclassement cross-encoder sur une profondeur bornee : le cosinus dit ce qui *ressemble*
+        // a la requete, le cross-encoder ce qui y *repond*. Sans effet si le modele est absent.
+        let candidates = fused.into_iter().take(RERANK_DEPTH).collect();
+        let reranked = Self::rerank(trimmed, candidates, RERANK_DEPTH as i64).await;
+
+        // Diversification en dernier : elle doit s'appliquer sur le classement final, sinon elle
+        // ecarterait des offres que le reclassement aurait fait remonter.
+        Ok(Self::diversify(reranked, limit.max(1) as usize))
+    }
+
+    /// Limite le nombre d'offres partageant le meme intitule et la meme entreprise, puis tronque.
+    ///
+    /// Les offres ecartees ne sont pas des doublons : ce sont le meme role dans des villes
+    /// differentes, avec des URL de candidature distinctes. Les supprimer de la base serait une
+    /// perte ; les laisser monopoliser la page de resultats en est une autre. On plafonne donc
+    /// l'affichage sans toucher au corpus.
+    fn diversify(offers: Vec<JobOffer>, limit: usize) -> Vec<JobOffer> {
+        let mut seen: std::collections::HashMap<(String, String), usize> =
+            std::collections::HashMap::new();
+        let mut kept = Vec::with_capacity(limit.min(offers.len()));
+        let mut overflow: Vec<JobOffer> = Vec::new();
+
+        for offer in offers {
+            let key = (
+                offer.title.trim().to_lowercase(),
+                offer.company.as_deref().unwrap_or_default().trim().to_lowercase(),
+            );
+            let count = seen.entry(key).or_insert(0);
+            if *count < MAX_PER_ROLE {
+                *count += 1;
+                kept.push(offer);
+            } else {
+                // Conservees a part : si la diversification laissait la page a moitie vide, mieux
+                // vaut la completer avec des offres ecartees que rendre moins que demande.
+                overflow.push(offer);
+            }
+        }
+
+        if kept.len() < limit {
+            kept.extend(overflow.into_iter().take(limit - kept.len()));
+        }
+        kept.truncate(limit);
+        kept
+    }
+
+    /// Reclasse les offres avec le cross-encoder ONNX.
+    ///
+    /// Le document soumis au modele est volontairement court — intitule, entreprise, lieu, debut
+    /// de description : le cross-encoder tronque a 512 jetons, et lui donner une annonce entiere
+    /// ferait juger la moitie de son pied de page plutot que le poste.
+    async fn rerank(query: &str, offers: Vec<JobOffer>, limit: i64) -> Vec<JobOffer> {
+        if offers.len() < 2 {
+            return offers;
+        }
+
+        let documents: Vec<String> = offers.iter().map(Self::rerank_document).collect();
+        let indices = RerankerService::rank_indices(query, documents).await;
+        RerankerService::apply(offers, &indices, limit.max(1) as usize)
+    }
+
+    /// Representation textuelle d'une offre soumise au cross-encoder.
+    fn rerank_document(offer: &JobOffer) -> String {
+        // Part de description retenue, alignee sur la troncature du cross-encoder (128 jetons,
+        // soit environ 400 caracteres au total). En envoyer davantage ne ferait que faire tronquer
+        // le tokenizer, apres avoir paye la copie de la chaine.
+        const DESCRIPTION_CHARS: usize = 280;
+
+        let mut parts = vec![offer.title.clone()];
+        if let Some(company) = offer.company.as_deref().filter(|v| !v.trim().is_empty()) {
+            parts.push(company.to_string());
+        }
+        if let Some(location) = offer.location.as_deref().filter(|v| !v.trim().is_empty()) {
+            parts.push(location.to_string());
+        }
+        if let Some(description) = offer.description.as_deref().filter(|v| !v.trim().is_empty()) {
+            parts.push(description.chars().take(DESCRIPTION_CHARS).collect());
+        }
+        parts.join(" - ")
     }
 
     /// Nombre d'offres reellement indexees (embedding termine), donc interrogeables par l'IA.
@@ -690,6 +913,98 @@ mod tests {
         let sourceless = offer_with("Dev", None, None);
         assert!(matches_source(&sourceless, None));
         assert!(!matches_source(&sourceless, Some("EMPLOI_NC")));
+    }
+
+    fn offer_named(title: &str, company: &str) -> JobOffer {
+        JobOffer {
+            title: title.to_string(),
+            company: Some(company.to_string()),
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn diversify_caps_the_same_role_at_the_same_company() {
+        // Cas reel : « Applied AI Engineer » chez openai existe en cinq villes. Ce sont cinq postes
+        // distincts, mais ils ne doivent pas monopoliser la page.
+        let offers = vec![
+            offer_named("Applied AI Engineer", "openai"),
+            offer_named("Applied AI Engineer", "openai"),
+            offer_named("Applied AI Engineer", "openai"),
+            offer_named("Software Engineer", "openai"),
+            offer_named("Data Engineer", "scaleway"),
+        ];
+        // Limite a 4 : il y a assez d'autres roles pour remplir la page, donc le repli ne se
+        // declenche pas et le plafond s'observe seul. (Le repli a son propre test.)
+        let kept = JobSearchService::diversify(offers, 4);
+        let applied = kept.iter().filter(|o| o.title == "Applied AI Engineer").count();
+        assert_eq!(applied, MAX_PER_ROLE, "le plafond par role doit s'appliquer");
+        // Les places liberees profitent aux autres roles.
+        assert!(kept.iter().any(|o| o.title == "Software Engineer"));
+        assert!(kept.iter().any(|o| o.title == "Data Engineer"));
+    }
+
+    #[test]
+    fn diversify_distinguishes_companies() {
+        // Meme intitule mais entreprises differentes : ce ne sont pas les memes offres, le plafond
+        // ne doit pas les confondre.
+        let offers = vec![
+            offer_named("Developpeur full-stack", "acme"),
+            offer_named("Developpeur full-stack", "globex"),
+            offer_named("Developpeur full-stack", "initech"),
+        ];
+        assert_eq!(JobSearchService::diversify(offers, 5).len(), 3);
+    }
+
+    #[test]
+    fn diversify_backfills_rather_than_returning_less_than_asked() {
+        // Si le plafond vidait la page, mieux vaut la completer avec les offres ecartees que
+        // rendre trois resultats quand l'utilisateur en demande cinq.
+        let offers = vec![
+            offer_named("Meme poste", "acme"),
+            offer_named("Meme poste", "acme"),
+            offer_named("Meme poste", "acme"),
+            offer_named("Meme poste", "acme"),
+            offer_named("Meme poste", "acme"),
+        ];
+        assert_eq!(JobSearchService::diversify(offers, 4).len(), 4);
+    }
+
+    #[test]
+    fn diversify_is_case_and_whitespace_insensitive() {
+        // Les sources ne normalisent pas : « openai » et « OpenAI » sont la meme entreprise.
+        let offers = vec![
+            offer_named("Applied AI Engineer", "openai"),
+            offer_named("  applied ai engineer  ", "OpenAI"),
+            offer_named("Applied AI Engineer", "openai"),
+        ];
+        assert_eq!(JobSearchService::diversify(offers, 3).len(), 3, "le repli complete la page");
+        // Mais le plafond a bien vu les trois comme un seul groupe : sans cela, aucune ne serait
+        // passee par la branche de repli.
+        let kept = JobSearchService::diversify(
+            vec![
+                offer_named("Role", "acme"),
+                offer_named("ROLE", "ACME"),
+                offer_named("role", "Acme"),
+                offer_named("Autre", "acme"),
+            ],
+            3,
+        );
+        assert_eq!(kept.iter().filter(|o| o.title.eq_ignore_ascii_case("role")).count(), 2);
+        assert!(kept.iter().any(|o| o.title == "Autre"));
+    }
+
+    #[test]
+    fn diversify_preserves_relevance_order() {
+        // La diversification s'applique apres le reclassement : elle ne doit pas reordonner.
+        let offers = vec![
+            offer_named("Premier", "a"),
+            offer_named("Deuxieme", "b"),
+            offer_named("Troisieme", "c"),
+        ];
+        let kept = JobSearchService::diversify(offers, 3);
+        let titles: Vec<&str> = kept.iter().map(|o| o.title.as_str()).collect();
+        assert_eq!(titles, vec!["Premier", "Deuxieme", "Troisieme"]);
     }
 
     #[test]
