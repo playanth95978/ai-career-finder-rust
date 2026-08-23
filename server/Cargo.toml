@@ -38,6 +38,20 @@ rig = { version = "0.42.0", features = ["derive"] }
 # Appels REST vers l'API OCR Mistral (rustls : aucune dépendance C supplémentaire).
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 base64 = "0.22"
+# Reranking cross-encoder ONNX (bge-reranker-base), portage du RerankerService Java.
+# `default-features = false` : on n'active pas `hf-hub`, le modele etant charge depuis le disque
+# via `try_new_from_user_defined`, qui n'est pas derriere cette feature.
+# `ort-download-binaries` fait recuperer la bibliotheque ONNX Runtime native a la compilation.
+fastembed = { version = "4.9", default-features = false, features = ["ort-download-binaries"] }
+# Extraction du texte des descriptions HTML des boards, et selecteurs CSS pour les sources
+# sans API (HelloWork). Un parseur reel plutot qu'un retrait de balises par regex : les annonces
+# scrapees contiennent des entites, des balises non fermees et des commentaires.
+scraper = "0.20"
+# Identite stable pour les sources sans identifiant (hash des invariants de l'annonce).
+sha2 = "0.10"
+hex = "0.4"
+# Encodage des parametres de requete construits a la main.
+urlencoding = "2"
 # Combinateurs de flux pour le streaming SSE de l'assistant (rig expose des `Stream`).
 futures = "0.3"
 # Type vector(768) de pgvector, mappe pour Diesel.

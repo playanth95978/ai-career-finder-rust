@@ -166,10 +166,29 @@ pub fn board_slug(url: Option<&str>, marker: &str) -> String {
 pub struct AtsDates;
 
 impl AtsDates {
+    /// Horodatage epoch, en secondes ou en millisecondes selon l'ordre de grandeur.
+    ///
+    /// Les sources melangent les deux (Lever publie des millisecondes, les flux type Arbeitnow des
+    /// secondes) et aucune ne le documente : la borne est le seul moyen de trancher.
+    pub fn from_epoch(epoch: i64) -> Option<chrono::NaiveDateTime> {
+        const EPOCH_SECONDS_UPPER_BOUND: i64 = 100_000_000_000;
+        let (secs, nanos) = if epoch < EPOCH_SECONDS_UPPER_BOUND {
+            (epoch, 0)
+        } else {
+            (epoch / 1_000, ((epoch % 1_000) * 1_000_000) as u32)
+        };
+        chrono::DateTime::from_timestamp(secs, nanos).map(|dt| dt.naive_utc())
+    }
+
     pub fn parse(raw: &str) -> Option<chrono::NaiveDateTime> {
         let raw = raw.trim();
         if raw.is_empty() {
             return None;
+        }
+        // Une valeur entierement numerique est un horodatage epoch, pas une date formatee :
+        // Careerjet et les flux RSS en publient, et aucun format de date ne les reconnaitrait.
+        if raw.chars().all(|c| c.is_ascii_digit()) {
+            return raw.parse::<i64>().ok().and_then(Self::from_epoch);
         }
         // 1. ISO 8601 complet avec fuseau -> ramene en UTC naif.
         if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(raw) {

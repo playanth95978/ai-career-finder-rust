@@ -1,12 +1,11 @@
 //! Recherche d'offres : collecte live chez les sources, persistance dedupliquee, et classement
 //! du corpus deja ingere.
 //!
-//! Ecart assume par rapport a l'application Spring : la table `job_offer` ne porte pas encore de
-//! colonne `embedding` (seul `candidate_profile` en a une). La recherche « intelligente » et le
-//! pre-filtrage du match reposent donc sur un classement lexical (titre, competences,
-//! description) et non sur pgvector + BM25 + RRF + reranking. La forme des reponses est celle
-//! attendue par le front ; c'est la qualite du classement qui reste a rattraper une fois les
-//! embeddings d'offres en place.
+//! La recherche semantique passe par [`JobOfferVectorIndex`] (pgvector) ; le classement lexical
+//! de ce module reste le repli quand une offre n'est pas encore vectorisee.
+//!
+//! Ecart restant avec l'application Spring : elle fusionne le vectoriel et BM25 par Reciprocal
+//! Rank Fusion puis reclasse avec un cross-encoder. Ni le RRF ni le reranking ne sont portes.
 
 use chrono::Utc;
 use diesel::prelude::*;
@@ -17,8 +16,18 @@ use crate::db::schema::job_offer;
 use crate::db::DbConnection;
 use crate::errors::AppError;
 use crate::models::{JobOffer, NewJobOffer};
+use crate::config::ats_config::AtsConfig;
+use crate::services::connectors::aggregators::{
+    AdzunaConnector, CareerjetConnector, FranceTravailConnector,
+};
 use crate::services::connectors::ats_connector::AtsConnector;
+use crate::services::connectors::boards::{
+    AshbyConnector, GreenhouseConnector, LeverConnector, RecruiteeConnector,
+    SmartRecruitersConnector, WorkableConnector,
+};
 use crate::services::connectors::emploi_nc::EmploiNcConnector;
+use crate::services::connectors::feeds::{JobicyConnector, RemoteOkConnector};
+use crate::services::connectors::scrapers::{HelloWorkConnector, SeekConnector};
 use crate::services::job_offer_vector_index::JobOfferVectorIndex;
 
 /// Statut d'embedding porte par les offres indexees, aligne sur l'enum Java `EmbeddingStatus`.
@@ -56,12 +65,55 @@ type BoxedPredicate = Box<
 pub struct JobSearchService;
 
 impl JobSearchService {
-    /// Connecteurs actifs. Un seul pour l'instant (emploi.nc) : les autres connecteurs ATS de la
-    /// version Java ne sont pas encore portes, et en annoncer plus donnerait de faux resultats
-    /// vides quand le front passe un `source` inconnu.
+    /// Connecteurs actifs, portage complet de la liste `permits` de `AbstractAtsConnector`.
+    ///
+    /// Le client HTTP est partage : chaque `reqwest::Client` porte son propre pool de connexions,
+    /// en construire un par connecteur multiplierait les handshakes TLS vers les memes hotes.
+    ///
+    /// Les connecteurs a identifiants restent dans la liste meme sans configuration : ils
+    /// renvoient une liste vide en le journalisant une fois, ce qui se diagnostique mieux qu'une
+    /// source absente de la liste. Seul Seek est conditionnel, comme cote Spring : sa mitigation
+    /// anti-bot repond 403 au scraping serveur, donc l'activer par defaut ne produirait que du
+    /// bruit dans les journaux.
     fn connectors() -> Vec<Box<dyn AtsConnector>> {
         let client = Client::new();
-        vec![Box::new(EmploiNcConnector::new(client))]
+        let config = AtsConfig::from_env();
+
+        let mut connectors: Vec<Box<dyn AtsConnector>> = vec![
+            // Agregateurs : les seuls a offrir une recherche transverse.
+            Box::new(EmploiNcConnector::new(client.clone())),
+            Box::new(AdzunaConnector::new(client.clone(), config.adzuna.clone())),
+            Box::new(CareerjetConnector::new(client.clone(), config.careerjet.clone())),
+            Box::new(FranceTravailConnector::new(
+                client.clone(),
+                config.france_travail.clone(),
+            )),
+            // Flux publics sans cle, filtres en memoire.
+            Box::new(RemoteOkConnector::new(client.clone())),
+            Box::new(JobicyConnector::new(client.clone(), config.jobicy.clone())),
+            // Boards ATS : pas de recherche transverse, mais indispensables a `fetch_from_url`
+            // et au sondage d'un slug d'entreprise.
+            Box::new(GreenhouseConnector::new(client.clone())),
+            Box::new(LeverConnector::new(client.clone())),
+            Box::new(SmartRecruitersConnector::new(client.clone())),
+            Box::new(AshbyConnector::new(client.clone(), config.ashby_boards.clone())),
+            Box::new(WorkableConnector::new(
+                client.clone(),
+                config.workable_accounts.clone(),
+            )),
+            Box::new(RecruiteeConnector::new(
+                client.clone(),
+                config.recruitee_companies.clone(),
+            )),
+            // Sans API publique : analyse de la page de recherche.
+            Box::new(HelloWorkConnector::new(client.clone())),
+        ];
+
+        if config.seek_enabled {
+            connectors.push(Box::new(SeekConnector::new(client)));
+        }
+
+        connectors
     }
 
     /// Recherche live chez les sources externes, puis persiste ce qui est nouveau et renvoie les
@@ -78,17 +130,37 @@ impl JobSearchService {
     ) -> Result<Vec<JobOffer>, AppError> {
         let wanted_source = source.map(str::trim).filter(|s| !s.is_empty());
 
+        let selected: Vec<Box<dyn AtsConnector>> = Self::connectors()
+            .into_iter()
+            .filter(|connector| match wanted_source {
+                Some(wanted) => connector.source().as_str().eq_ignore_ascii_case(wanted),
+                None => true,
+            })
+            .collect();
+
+        // Les sources sont interrogees en parallele : en serie, sept appels reseau a quinze
+        // secondes de delai maximum plafonneraient la recherche a pres de deux minutes. En
+        // parallele, le temps total est celui de la source la plus lente.
+        let results = futures::future::join_all(
+            selected
+                .iter()
+                .map(|connector| async move {
+                    (
+                        connector.source().as_str(),
+                        connector.fetch_jobs(keywords, location).await,
+                    )
+                }),
+        )
+        .await;
+
         let mut fetched: Vec<JobOffer> = Vec::new();
-        for connector in Self::connectors() {
-            if let Some(wanted) = wanted_source {
-                if !connector.source().as_str().eq_ignore_ascii_case(wanted) {
-                    continue;
-                }
-            }
-            match connector.fetch_jobs(keywords, location).await {
+        for (source, result) in results {
+            match result {
                 Ok(offers) => fetched.extend(offers),
+                // Une source indisponible degrade en « aucun resultat » : elle ne doit pas vider
+                // la recherche entiere.
                 Err(e) => tracing::warn!(
-                    source = connector.source().as_str(),
+                    source,
                     error = %e,
                     "Source indisponible, ignoree pour cette recherche"
                 ),

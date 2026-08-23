@@ -22,6 +22,11 @@ static POOL: OnceLock<DbPool> = OnceLock::new();
 fn test_database_url() -> String {
     std::env::var("TEST_DATABASE_URL")
         .or_else(|_| {
+            // `.env` doit etre charge ici : `cargo test` ne le fait pas, contrairement au binaire
+            // (`main` appelle `dotenvy::dotenv()`). Sans cela `DATABASE_URL` est invisible et tous
+            // les tests adosses a la base retombaient sur le port 5432 code en dur, alors que la
+            // base tourne ailleurs — d'ou un echec « no password supplied » sur toute la suite.
+            dotenvy::dotenv().ok();
             std::env::var("DATABASE_URL").map(|base_url| {
                 format!("{}_test", base_url)
             })
@@ -83,11 +88,20 @@ fn ensure_test_database_exists(database_url: &str) {
     }
 }
 
+/// Sonde d'existence de la base de test.
+///
+/// `Integer` et non `BigInt` : la requete est `SELECT 1`, et un litteral entier est un `integer`
+/// (4 octets) en Postgres. Le declarer en `BigInt` faisait paniquer le decodeur Diesel
+/// (« Received fewer than 8 bytes decoding i64 »), panique que `.optional()` ne peut pas
+/// rattraper puisqu'elle survient pendant le decodage et non dans le `Result`.
+///
+/// Le defaut etait invisible tant que la connexion de maintenance echouait : la branche
+/// `if let Ok(conn)` n'etait jamais prise.
 #[derive(diesel::QueryableByName)]
 struct CountResult {
-    #[diesel(sql_type = diesel::sql_types::BigInt)]
+    #[diesel(sql_type = diesel::sql_types::Integer)]
     #[allow(dead_code)]
-    count: i64,
+    count: i32,
 }
 
 /// Cleans up test data for isolation between tests

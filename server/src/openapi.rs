@@ -34,6 +34,7 @@ use crate::handlers;
         handlers::health::health_check,
         // Management endpoint
         handlers::management::info,
+        handlers::management::health,
         // Account endpoints
         handlers::account::get_account,
         handlers::account::save_account,
@@ -170,6 +171,7 @@ use crate::handlers;
             handlers::account::ChangePasswordRequest,
             // Management schemas
             handlers::management::InfoResponse,
+            handlers::management::HealthResponse,
             // Health schemas
             HealthStatus,
             HealthComponent,

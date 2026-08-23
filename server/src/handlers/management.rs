@@ -1,4 +1,4 @@
-use axum::{routing::get, extract::State, Json, Router};
+use axum::{extract::State, routing::get, Json, Router};
 use serde::Serialize;
 use utoipa::ToSchema;
 
@@ -16,9 +16,21 @@ pub struct InfoResponse {
     pub active_profiles: Vec<String>,
 }
 
+/// Reponse de `/management/health`, forme attendue par l'UI JHipster.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct HealthResponse {
+    /// `UP` ou `DOWN`, seule valeur que le bandeau de statut interprete.
+    pub status: String,
+    /// Detail libre affiche a cote du statut.
+    #[schema(value_type = Object)]
+    pub details: serde_json::Value,
+}
+
 /// Management routes
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/info", get(info))
+    Router::new()
+        .route("/info", get(info))
+        .route("/health", get(health))
 }
 
 /// Get application info
@@ -34,8 +46,7 @@ pub fn routes() -> Router<AppState> {
 )]
 pub async fn info(State(state): State<AppState>) -> Json<InfoResponse> {
     // Use APP_PROFILE if set (Consul config profile), otherwise fall back to APP_ENV
-    let profile = std::env::var("APP_PROFILE")
-        .unwrap_or_else(|_| state.config.app_env.clone());
+    let profile = std::env::var("APP_PROFILE").unwrap_or_else(|_| state.config.app_env.clone());
 
     // Map common environment names to JHipster profile names
     let normalized = match profile.as_str() {
@@ -59,6 +70,27 @@ pub async fn info(State(state): State<AppState>) -> Json<InfoResponse> {
     })
 }
 
+/// Health check
+///
+/// Sonde de disponibilite consommee par l'UI JHipster et par les orchestrateurs.
+#[utoipa::path(
+    get,
+    path = "/management/health",
+    tag = "management",
+    responses(
+        (status = 200, description = "Application disponible", body = HealthResponse)
+    )
+)]
+pub async fn health() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "UP".to_string(),
+        // `json!` et non `.parse()` : `serde_json::Value` implemente `FromStr` pour du JSON
+        // valide, et une phrase nue n'en est pas — le `.unwrap()` paniquait a chaque appel.
+        details: serde_json::json!({ "message": "Server app is started" }),
+    })
+}
+
+
 // Track 1 Phase 1c (2026-05-11): integration tests for /management/info.
 // The handler reads APP_PROFILE from std::env; tests use a module-local
 // Mutex to serialize env mutations (same convention locked in Phase 1b).
@@ -67,10 +99,10 @@ pub async fn info(State(state): State<AppState>) -> Json<InfoResponse> {
 #[cfg(test)]
 mod integration_tests {
     use super::*;
+    use crate::test_utils::create_test_state;
     use axum::Router;
     use axum_test::TestServer;
     use tokio::sync::Mutex;
-    use crate::test_utils::create_test_state;
 
     // Serializes env-touching info tests within this module. Other test
     // modules with their own ENV_LOCK remain independently parallel.

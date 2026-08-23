@@ -5,7 +5,17 @@
 //! specificites.
 
 pub mod ats_connector;
+pub mod support;
+pub mod boards;
+pub mod feeds;
+pub mod aggregators;
+pub mod scrapers;
 pub mod emploi_nc;
 
 pub use ats_connector::*;
+pub use support::*;
+pub use boards::*;
+pub use feeds::*;
+pub use aggregators::*;
+pub use scrapers::*;
 pub use emploi_nc::*;
