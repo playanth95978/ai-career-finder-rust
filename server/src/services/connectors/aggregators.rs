@@ -501,6 +501,12 @@ const FRANCE_TRAVAIL_TOKEN_URL: &str =
     "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire";
 const FRANCE_TRAVAIL_SCOPE: &str = "api_offresdemploiv2 o2dsoffre";
 const FRANCE_TRAVAIL_PAGE_SIZE: i64 = 50;
+/// Taille de page de l'ingestion de masse. Plus grande que celle des recherches interactives : le
+/// batch veut le moins d'allers-retours possible, pas la premiere page au plus vite.
+const FRANCE_TRAVAIL_BATCH_PAGE_SIZE: i64 = 150;
+/// Plafond dur de l'API : la plage `range` ne depasse pas `0-3149`, quelle que soit la requete.
+/// C'est ce plafond qui justifie le partitionnement par grand domaine ROME.
+const FRANCE_TRAVAIL_MAX_RESULTS: i64 = 3150;
 /// Marge de renouvellement du jeton : un jeton qui expire pendant l'appel produirait un 401.
 const TOKEN_RENEWAL_MARGIN_SECS: i64 = 60;
 
@@ -580,10 +586,65 @@ impl FranceTravailConnector {
         Some(value)
     }
 
+    /// Recupere toutes les offres d'un grand domaine ROME, pour l'ingestion de masse.
+    ///
+    /// Deroule les plages jusqu'au plafond de l'API ou jusqu'a une page incomplete. La partition
+    /// par domaine est ce qui rend ce plafond acceptable : voir
+    /// [`crate::services::ingestion_partitions`].
+    pub async fn fetch_by_grand_domaine(
+        &self,
+        grand_domaine: &str,
+        departement: Option<&str>,
+    ) -> Vec<JobOffer> {
+        if !self.config.is_configured() {
+            return Vec::new();
+        }
+
+        let partition = FranceTravailPartition {
+            grand_domaine,
+            departement,
+        };
+        let mut collected: Vec<JobOffer> = Vec::new();
+        let mut start = 0i64;
+
+        while start < FRANCE_TRAVAIL_MAX_RESULTS {
+            // La derniere plage est tronquee au plafond : demander `3100-3249` renvoie une erreur
+            // plutot qu'une page partielle.
+            let size =
+                (start + FRANCE_TRAVAIL_BATCH_PAGE_SIZE).min(FRANCE_TRAVAIL_MAX_RESULTS) - start;
+            let page = self
+                .fetch_range_filtered(None, None, Some(partition), start, size)
+                .await;
+            let fetched = page.len() as i64;
+            collected.extend(page);
+
+            // Une page vide ou plus courte que demandee est la derniere : continuer paierait un
+            // appel pour rien, sur une API a quota.
+            if fetched < size {
+                break;
+            }
+            start += size;
+        }
+
+        collected
+    }
+
     async fn fetch_range(
         &self,
         keywords: Option<&str>,
         location: Option<&str>,
+        start: i64,
+        size: i64,
+    ) -> Vec<JobOffer> {
+        self.fetch_range_filtered(keywords, location, None, start, size)
+            .await
+    }
+
+    async fn fetch_range_filtered(
+        &self,
+        keywords: Option<&str>,
+        location: Option<&str>,
+        partition: Option<FranceTravailPartition<'_>>,
         start: i64,
         size: i64,
     ) -> Vec<JobOffer> {
@@ -595,9 +656,29 @@ impl FranceTravailConnector {
         if let Some(keywords) = keywords.map(str::trim).filter(|v| !v.is_empty()) {
             url.push_str(&format!("&motsCles={}", urlencoding::encode(keywords)));
         }
-        // `codePostal` et non un nom de ville : c'est le seul filtre geographique de l'API.
-        if let Some(location) = location.map(str::trim).filter(|v| !v.is_empty()) {
-            url.push_str(&format!("&codePostal={}", urlencoding::encode(location)));
+        // `codePostal` n'accepte qu'un code postal : « Paris » y produit un 400, donc aucune offre.
+        // Une localisation non numerique est donc ignoree — des resultats nationaux, que le
+        // reclassement geographique de `JobSearchService` remettra dans l'ordre, valent mieux
+        // qu'une requete en erreur. Meme arbitrage que le connecteur Java.
+        match location.map(str::trim).filter(|v| !v.is_empty()) {
+            Some(location) if is_postal_code(location) => {
+                url.push_str(&format!("&codePostal={}", urlencoding::encode(location)));
+            }
+            Some(location) => tracing::debug!(
+                location,
+                "France Travail : localisation ignoree, un code postal est attendu"
+            ),
+            None => {}
+        }
+        if let Some(partition) = partition {
+            url.push_str(&format!(
+                "&grandDomaine={}",
+                urlencoding::encode(partition.grand_domaine)
+            ));
+            if let Some(departement) = partition.departement.map(str::trim).filter(|v| !v.is_empty())
+            {
+                url.push_str(&format!("&departement={}", urlencoding::encode(departement)));
+            }
         }
 
         let bearer = format!("Bearer {token}");
@@ -616,6 +697,22 @@ impl FranceTravailConnector {
             .map(map_france_travail)
             .collect()
     }
+}
+
+/// Filtres de partitionnement de l'ingestion de masse : grand domaine ROME et departement INSEE.
+#[derive(Debug, Clone, Copy)]
+struct FranceTravailPartition<'a> {
+    grand_domaine: &'a str,
+    departement: Option<&'a str>,
+}
+
+/// Vrai pour un code postal francais, seule forme que `codePostal` accepte.
+///
+/// Le test porte sur la forme et non sur l'existence du code : rejeter un code valide mais inconnu
+/// d'une liste locale couterait plus que de laisser l'API repondre « aucun resultat ».
+fn is_postal_code(value: &str) -> bool {
+    let trimmed = value.trim();
+    trimmed.len() == 5 && trimmed.chars().all(|c| c.is_ascii_digit())
 }
 
 #[derive(Debug, Deserialize)]
@@ -821,6 +918,24 @@ mod tests {
         let connector = AdzunaConnector::new(Client::new(), adzuna_config(false));
         assert!(connector.fetch_jobs(Some("rust"), None).await.unwrap().is_empty());
         assert!(connector.fetch_configured_seeds().await.is_empty());
+    }
+
+    #[test]
+    fn un_code_postal_est_reconnu_a_sa_forme() {
+        assert!(is_postal_code("75001"));
+        assert!(is_postal_code(" 69003 "));
+    }
+
+    #[test]
+    fn un_nom_de_ville_nest_pas_un_code_postal() {
+        // Le cas qui produisait un 400 de l'API, donc zero offre : « Paris » passe en `codePostal`.
+        assert!(!is_postal_code("Paris"));
+        assert!(!is_postal_code("75"));
+        assert!(!is_postal_code("750011"));
+        assert!(!is_postal_code(""));
+        // Chiffres arabo-indiens : cinq caracteres numeriques, mais pas un code postal. C'est ce
+        // que `is_ascii_digit` ecarte et que `is_numeric` aurait accepte.
+        assert!(!is_postal_code("\u{0661}\u{0662}\u{0663}\u{0664}\u{0665}"));
     }
 
     #[tokio::test]

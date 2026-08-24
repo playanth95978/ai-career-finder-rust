@@ -302,6 +302,24 @@ diesel::table! {
 }
 // jhipster-needle-add-entity-schema
 
+// Journal des partitions d'ingestion. Ecrit a la main et non genere : la table n'est pas une
+// entite JDL, elle appartient a l'ordonnanceur d'ingestion.
+diesel::table! {
+    ingestion_run (id) {
+        id -> Uuid,
+        run_id -> Uuid,
+        source -> Varchar,
+        partition_key -> Varchar,
+        status -> Varchar,
+        read_count -> Int4,
+        written_count -> Int4,
+        skipped_count -> Int4,
+        error -> Nullable<Varchar>,
+        started_at -> Timestamp,
+        finished_at -> Nullable<Timestamp>,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     authorities,
     users,
@@ -319,5 +337,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     offer_positioning,
     offer_tailored_resume,
     chat_message,
+    ingestion_run,
     // jhipster-needle-add-allow-table
 );

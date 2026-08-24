@@ -86,6 +86,14 @@ async fn main() {
     // se contentent alors du classement RRF.
     job_search_rust::services::reranker_service::RerankerService::spawn_warmup();
 
+    // Ingestion planifiee des offres : equivalent du `ingestJobOffersJob` Spring. Le poller
+    // d'embedding ci-dessous vectorise ensuite ce qu'elle a insere, hors de son chemin.
+    job_search_rust::services::ingestion_scheduler::spawn(
+        pool.clone(),
+        job_search_rust::config::ats_config::AtsConfig::from_env(),
+    )
+    .await;
+
     // Poller d'embedding des offres : l'ingestion les marque PENDING, ce poller ecrit leur
     // vecteur en tache de fond. Sans lui, `/jobs/indexed-count` resterait a zero et la recherche
     // semantique se replierait indefiniment sur le lexical.

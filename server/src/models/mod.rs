@@ -31,3 +31,5 @@ pub use offer_tailored_resume::*;
 // jhipster-needle-add-entity-model - JHipster will add entity models here
 pub mod chat_message;
 pub use chat_message::*;
+pub mod ingestion_run;
+pub use ingestion_run::*;

@@ -56,6 +56,7 @@ urlencoding = "2"
 futures = "0.3"
 # Type vector(768) de pgvector, mappe pour Diesel.
 pgvector = { version = "0.4", features = ["diesel"] }
+tokio-cron-scheduler = { version = "0.15", default-features = false, features = ["signal"] }
 
 [dev-dependencies]
 axum-test = "14"

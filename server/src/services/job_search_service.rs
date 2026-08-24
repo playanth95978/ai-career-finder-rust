@@ -325,6 +325,31 @@ impl JobSearchService {
         )))
     }
 
+    /// Persiste un lot d'offres et renvoie le nombre d'insertions **nouvelles**.
+    ///
+    /// Point d'entree de l'ingestion planifiee. Elle a deja ecarte les doublons de son lot en une
+    /// requete groupee ; ce qui reste ici est la construction de `search_text`, le TTL
+    /// d'expiration et le repli de deduplication sur `apply_url` — trois regles qu'il vaut mieux
+    /// partager que dupliquer.
+    ///
+    /// Le compte renvoye est le nombre de lignes reellement creees, et non la taille du lot : les
+    /// offres reconnues comme deja presentes ne sont pas comptees.
+    pub fn persist_offers(
+        conn: &mut DbConnection,
+        offers: Vec<JobOffer>,
+    ) -> Result<usize, AppError> {
+        let ids_before: std::collections::HashSet<Uuid> =
+            offers.iter().map(|offer| offer.id).collect();
+        let persisted = Self::persist_all(conn, offers)?;
+
+        // Une offre inseree recoit un identifiant neuf ; une offre reconnue comme doublon ressort
+        // avec celui de la ligne existante. C'est ce qui distingue les deux sans second aller-retour.
+        Ok(persisted
+            .iter()
+            .filter(|offer| !ids_before.contains(&offer.id))
+            .count())
+    }
+
     /// Insere les offres inconnues et renvoie la version persistee de chacune.
     ///
     /// La deduplication se fait sur `(source, source_id)` quand la source fournit un identifiant
