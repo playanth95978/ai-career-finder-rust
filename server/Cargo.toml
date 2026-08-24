@@ -38,11 +38,6 @@ rig = { version = "0.42.0", features = ["derive"] }
 # Appels REST vers l'API OCR Mistral (rustls : aucune dépendance C supplémentaire).
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 base64 = "0.22"
-# Reranking cross-encoder ONNX (bge-reranker-base), portage du RerankerService Java.
-# `default-features = false` : on n'active pas `hf-hub`, le modele etant charge depuis le disque
-# via `try_new_from_user_defined`, qui n'est pas derriere cette feature.
-# `ort-download-binaries` fait recuperer la bibliotheque ONNX Runtime native a la compilation.
-fastembed = { version = "4.9", default-features = false, features = ["ort-download-binaries"] }
 # Extraction du texte des descriptions HTML des boards, et selecteurs CSS pour les sources
 # sans API (HelloWork). Un parseur reel plutot qu'un retrait de balises par regex : les annonces
 # scrapees contiennent des entites, des balises non fermees et des commentaires.
@@ -57,6 +52,9 @@ futures = "0.3"
 # Type vector(768) de pgvector, mappe pour Diesel.
 pgvector = { version = "0.4", features = ["diesel"] }
 tokio-cron-scheduler = { version = "0.15", default-features = false, features = ["signal"] }
+ort = { version = "2.0.0-rc.9", default-features = false, features = ["download-binaries", "ndarray"] }
+tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
+ndarray = "0.16"
 
 [dev-dependencies]
 axum-test = "14"

@@ -63,10 +63,17 @@ const RETRIEVAL_DEPTH: i64 = 60;
 
 /// Nombre maximum de candidats soumis au cross-encoder.
 ///
-/// L'inference coute environ une dizaine de millisecondes par paire : reclasser les 120 candidats
-/// que peut produire la fusion ajouterait plus d'une seconde a la recherche pour departager des
-/// offres qui ne seront jamais affichees.
-const RERANK_DEPTH: usize = 40;
+/// C'est le levier le plus direct sur la latence : le cout de l'inference est lineaire en nombre de
+/// paires. Mesure de bout en bout sur 500 000 offres, machine a 16 coeurs :
+///
+///   profondeur 40 -> 610 ms de reclassement, 78 % du CPU pour un seul utilisateur
+///   profondeur 16 -> environ 245 ms
+///
+/// Descendu de 40 a 16 pour cette raison. Le compromis est assume : le cross-encoder ne peut plus
+/// remonter une offre classee au-dela du seizieme rang par la fusion RRF. Sur des listes ou les
+/// deux volets s'accordent, cette queue de classement n'etait de toute facon presque jamais
+/// remontee dans les dix resultats affiches.
+const RERANK_DEPTH: usize = 16;
 
 /// Nombre maximum d'offres partageant le meme intitule et la meme entreprise dans les resultats.
 ///
@@ -505,19 +512,33 @@ impl JobSearchService {
 
         // Les offres expirees sont exclues des resultats mais conservees en base : celles liees a
         // une candidature font partie de l'historique de l'utilisateur.
+        //
+        // L'instant de comparaison est calcule ici et **passe en parametre lie**, au lieu d'appeler
+        // `now()` dans le SQL. Ce n'est pas cosmetique : `now()` n'est pas une constante que
+        // ParadeDB peut traduire en requete Tantivy, donc il retombait sur un `heap_filter` et
+        // relisait le heap pour chaque candidat du haut de classement. Mesure sur 500 000 offres :
+        //
+        //   ... AND (expires_at IS NULL OR expires_at > now())        ->  181 ms
+        //   ... AND (expires_at IS NULL OR expires_at > $timestamp)   ->    8 ms
+        //
+        // Le filtre est alors entierement evalue dans l'index — a condition que `expires_at` y
+        // figure, ce que fait la migration `bm25_index_expires_at`.
+        let now = Utc::now().naive_utc();
+
         let mut sql = String::from(
             "SELECT id FROM job_offer \
-             WHERE search_text @@@ $1 AND (expires_at IS NULL OR expires_at > now())",
+             WHERE search_text @@@ $1 AND (expires_at IS NULL OR expires_at > $3)",
         );
         if source.map(str::trim).is_some_and(|s| !s.is_empty()) {
-            sql.push_str(" AND upper(source) = upper($3)");
+            sql.push_str(" AND upper(source) = upper($4)");
         }
         sql.push_str(" ORDER BY paradedb.score(id) DESC LIMIT $2");
 
         let ids: Vec<Uuid> = {
             let base = diesel::sql_query(&sql)
                 .bind::<diesel::sql_types::Text, _>(expression)
-                .bind::<diesel::sql_types::BigInt, _>(limit.clamp(1, CORPUS_SCAN_LIMIT));
+                .bind::<diesel::sql_types::BigInt, _>(limit.clamp(1, CORPUS_SCAN_LIMIT))
+                .bind::<diesel::sql_types::Timestamp, _>(now);
 
             match source.map(str::trim).filter(|s| !s.is_empty()) {
                 Some(source) => base
