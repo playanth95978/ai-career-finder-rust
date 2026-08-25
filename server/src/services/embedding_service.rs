@@ -115,6 +115,23 @@ impl EmbeddingService {
         Ok(vector)
     }
 
+    /// Embedding d'une **requete utilisateur**, avec cache.
+    ///
+    /// Distincte de [`Self::embed`] a dessein. Le cache n'a de sens que sur les requetes : elles se
+    /// repetent d'un utilisateur a l'autre et leur vecteur ne perime pas. Les textes d'offre, eux,
+    /// sont tous differents et ne sont vectorises qu'une fois par le poller — les mettre en cache
+    /// evincerait les requetes sans jamais resservir.
+    pub async fn embed_query(text: &str) -> Result<Vec<f32>, AppError> {
+        let model = Self::model();
+        if let Some(vector) = crate::services::search_cache::cached_embedding(&model, text) {
+            return Ok(vector);
+        }
+
+        let vector = Self::embed(text).await?;
+        crate::services::search_cache::store_embedding(&model, text, &vector);
+        Ok(vector)
+    }
+
     /// Rendu textuel canonique d'un profil, transcrit du `buildProfileText` Java : postes vises,
     /// competences, puis un extrait du CV brut. Les deux backends embarquent ainsi le meme texte.
     pub fn build_profile_text(

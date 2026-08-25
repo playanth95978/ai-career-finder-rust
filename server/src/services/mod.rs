@@ -69,6 +69,7 @@ pub mod rrf_service;
 pub mod ingestion_partitions;
 pub mod job_offer_ingestion_service;
 pub mod ingestion_scheduler;
+pub mod search_cache;
 pub use rrf_service::*;
 
 pub use connectors::*;

@@ -67,7 +67,10 @@ impl JobOfferVectorIndex {
 
         // Vectorisation hors connexion au pool : l'appel au modele est lent, inutile
         // d'immobiliser une connexion pendant ce temps.
-        let embedded = EmbeddingService::embed(query).await?;
+        //
+        // `embed_query` et non `embed` : c'est le chemin des requetes utilisateur, celui ou le
+        // cache d'embeddings sert.
+        let embedded = EmbeddingService::embed_query(query).await?;
         let vector = Vector::from(embedded);
         let limit = samples.clamp(1, MAX_SAMPLES);
 

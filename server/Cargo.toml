@@ -55,6 +55,7 @@ tokio-cron-scheduler = { version = "0.15", default-features = false, features = 
 ort = { version = "2.0.0-rc.9", default-features = false, features = ["download-binaries", "ndarray"] }
 tokenizers = { version = "0.21", default-features = false, features = ["onig"] }
 ndarray = "0.16"
+moka = { version = "0.12", default-features = false, features = ["sync"] }
 
 [dev-dependencies]
 axum-test = "14"

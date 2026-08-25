@@ -161,6 +161,13 @@ impl JobOfferIngestionService {
             }
         }
 
+        // Le corpus a change : les pages de resultats en cache decrivent l'etat d'avant. Les
+        // embeddings de requetes, eux, restent valides — de nouvelles offres ne changent pas le
+        // vecteur de « developpeur rust ».
+        if summary.written > 0 {
+            crate::services::search_cache::invalidate_results();
+        }
+
         tracing::info!(
             %run_id,
             total = summary.partitions_total,

@@ -75,6 +75,30 @@ const RETRIEVAL_DEPTH: i64 = 60;
 /// remontee dans les dix resultats affiches.
 const RERANK_DEPTH: usize = 16;
 
+/// Nombre d'offres soumises au cross-encoder pour decider si la recherche a une reponse.
+///
+/// Le cross-encoder ne sert plus a ordonner mais a **repondre ou se taire**. Mesure comparative sur
+/// 500 000 offres (`scripts/compare_rerank_quality.py`), avec et sans reclassement :
+///
+/// | | avec | sans |
+/// |---|---|---|
+/// | precision@10 sur 10 requetes ancrees | 100 % | 95 % |
+/// | offres rendues sur 4 requetes hors-sujet | 0 | 40 |
+///
+/// Cinq points de precision separent les deux classements : la fusion RRF ordonne deja bien. Tout
+/// l'apport du cross-encoder est dans la seconde ligne — sans lui, « astronaute mission spatiale »
+/// remonte Kinesitherapeute et Comptable, et « archeologue » remonte Estheticienne. Et ce, **malgre**
+/// le plancher cosinus, qui reprend le relais quand le modele est absent : la mesure confirme qu'il
+/// ne filtre rien sur un corpus francophone mixte.
+///
+/// Puisque seul le verdict compte, il n'y a pas lieu de reclasser seize offres pour l'obtenir. Le
+/// cout de l'inference est lineaire en nombre de paires : trois au lieu de seize, soit environ 19 %
+/// du cout, pour la seule chose que la mesure attribue au modele.
+///
+/// Trois et non une : une premiere offre mal classee par la fusion ferait declarer la recherche
+/// sans reponse alors qu'elle en a une. Trois donne une voix majoritaire a peu de frais.
+const GATE_DEPTH: usize = 3;
+
 /// Nombre maximum d'offres partageant le meme intitule et la meme entreprise dans les resultats.
 ///
 /// Mesure sur le corpus : « Applied AI Engineer » chez openai existe en cinq exemplaires — Abu
@@ -712,6 +736,13 @@ impl JobSearchService {
             return Self::lexical_only(pool, query, source, limit).await;
         }
 
+        // Cache de page consulte en premier : tout ce qui suit — embedding, HNSW, BM25, fusion,
+        // portier cross-encoder — est deterministe a corpus constant. La duree de vie est courte
+        // (cinq minutes) et l'ingestion vide le cache : voir `search_cache`.
+        if let Some(cached) = crate::services::search_cache::cached_results(trimmed, source, limit) {
+            return Ok(cached);
+        }
+
         // Le seuil n'est PAS applique en SQL : il faut pouvoir distinguer « le corpus n'a aucun
         // vecteur » (repli lexical legitime) de « aucune offre n'est assez proche » (resultat vide
         // correct). Filtrer en base confondrait les deux en une seule liste vide.
@@ -786,14 +817,24 @@ impl JobSearchService {
         // mot est une preuve directe, pas une ressemblance a seuiller.
         let fused = RrfFusionService::fuse(vec![offers, lexical], |offer: &JobOffer| offer.id);
 
-        // Reclassement cross-encoder sur une profondeur bornee : le cosinus dit ce qui *ressemble*
-        // a la requete, le cross-encoder ce qui y *repond*. Sans effet si le modele est absent.
-        let candidates = fused.into_iter().take(RERANK_DEPTH).collect();
-        let reranked = Self::rerank(trimmed, candidates, RERANK_DEPTH as i64).await;
+        let candidates: Vec<JobOffer> = fused.into_iter().take(RERANK_DEPTH).collect();
+
+        // Le cross-encoder est consulte en **portier** : il ne reordonne rien, il dit seulement si
+        // le corpus contient une reponse. Voir [`GATE_DEPTH`] pour la mesure qui motive ce choix.
+        if !Self::has_answer(trimmed, &candidates).await {
+            tracing::debug!(query = trimmed, "Aucune offre au-dessus du seuil de pertinence");
+            // Une absence de reponse se met en cache comme une reponse. C'est meme le cas qui le
+            // merite le plus : la requete a paye tout le pipeline, portier compris, pour ne rien
+            // rendre — et une requete hors-sujet est typiquement retentee telle quelle.
+            crate::services::search_cache::store_results(trimmed, source, limit, &[]);
+            return Ok(Vec::new());
+        }
 
         // Diversification en dernier : elle doit s'appliquer sur le classement final, sinon elle
-        // ecarterait des offres que le reclassement aurait fait remonter.
-        Ok(Self::diversify(reranked, limit.max(1) as usize))
+        // ecarterait des offres que la fusion aurait fait remonter.
+        let page = Self::diversify(candidates, limit.max(1) as usize);
+        crate::services::search_cache::store_results(trimmed, source, limit, &page);
+        Ok(page)
     }
 
     /// Volet lexical de la recherche hybride, sur un thread bloquant.
@@ -893,38 +934,38 @@ impl JobSearchService {
         kept
     }
 
-    /// Reclasse les offres avec le cross-encoder ONNX.
+    /// Vrai si le corpus contient une reponse a `query`, d'apres le cross-encoder.
     ///
-    /// Le document soumis au modele est volontairement court — intitule, entreprise, lieu, debut
-    /// de description : le cross-encoder tronque a 512 jetons, et lui donner une annonce entiere
+    /// Seules les [`GATE_DEPTH`] premieres offres de la fusion sont soumises au modele : le verdict
+    /// ne demande pas de reclasser toute la page, et l'inference est ce qui coute.
+    ///
+    /// Le document soumis est volontairement court — intitule, entreprise, lieu, debut de
+    /// description : le cross-encoder tronque a 512 jetons, et lui donner une annonce entiere
     /// ferait juger la moitie de son pied de page plutot que le poste.
-    async fn rerank(query: &str, offers: Vec<JobOffer>, limit: i64) -> Vec<JobOffer> {
+    ///
+    /// **Repond `true` quand le modele est indisponible.** Un portier absent laisse passer : le
+    /// reclassement est un raffinement, et rendre une liste imparfaite vaut mieux que rendre une
+    /// page vide parce qu'un fichier manque. Le plancher cosinus, applique en amont, reste alors la
+    /// seule barriere — imparfaite, mais c'est deja le comportement d'avant.
+    async fn has_answer(query: &str, offers: &[JobOffer]) -> bool {
         if offers.is_empty() {
-            return offers;
+            return false;
         }
 
-        let documents: Vec<String> = offers.iter().map(Self::rerank_document).collect();
-        let top_k = limit.max(1) as usize;
+        let documents: Vec<String> = offers
+            .iter()
+            .take(GATE_DEPTH)
+            .map(Self::rerank_document)
+            .collect();
 
-        // `rank_scored` plutot que `rank_indices` : le score est ce qui permet d'ecarter le
-        // hors-sujet, pas seulement de l'ordonner. Sans lui, une recherche sans aucune offre
-        // pertinente renvoyait les moins mauvaises, presentees comme des resultats.
+        // `rank_scored` plutot que `rank_indices` : c'est le score qui porte le verdict, l'ordre
+        // n'a plus d'usage ici.
         let Some(scored) = RerankerService::rank_scored(query, documents).await else {
-            // Modele absent : on garde l'ordre de la fusion, le plancher cosinus ayant deja filtre.
-            return offers.into_iter().take(top_k).collect();
+            return true;
         };
 
         let floor = crate::services::reranker_service::relevance_floor();
-        let relevant: Vec<usize> = scored
-            .into_iter()
-            .filter(|(_, score)| *score >= floor)
-            .map(|(index, _)| index)
-            .collect();
-
-        if relevant.is_empty() {
-            tracing::debug!(query, "Aucune offre au-dessus du seuil de pertinence");
-        }
-        RerankerService::apply(offers, &relevant, top_k)
+        scored.iter().any(|(_, score)| *score >= floor)
     }
 
     /// Representation textuelle d'une offre soumise au cross-encoder.
